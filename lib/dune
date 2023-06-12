@@ -1,5 +1,6 @@
 (library
- (name simpl))
+ (name simpl)
+ (preprocess (pps ppx_deriving.show)))
 
 (menhir
  (modules simpl_parser))

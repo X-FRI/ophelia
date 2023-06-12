@@ -2,7 +2,8 @@ type bop =
   | Add
   | Mult
   | Leq
-
+  [@@deriving show]
+  
 type expr =
   | Var of string
   | Int of int
@@ -10,6 +11,7 @@ type expr =
   | Binop of bop * expr * expr
   | Let of string * expr * expr
   | If of expr * expr * expr
+  [@@deriving show]
 
 (** [is_value e] is whether [e] is a value. *)
 let is_value = function
