@@ -1,2 +1,3 @@
 (test
- (name sml))
+ (name sml_test)
+ (libraries sml))

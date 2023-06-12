@@ -1,5 +1,5 @@
 {
-    open Parser
+    open Sml_parser
 }
 
 let white = [' ' '\t']+

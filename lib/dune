@@ -2,6 +2,6 @@
  (name sml))
 
 (menhir
- (modules parser))
+ (modules sml_parser))
 
-(ocamllex lexer)
+(ocamllex sml_lexer)
