@@ -38,3 +38,8 @@ and eval_if e1 e2 e3 =
     | Bool true -> eval_big e2
     | Bool false -> eval_big e3
     | _ -> failwith Error.if_guard_err
+
+let interp_big (s : string) : expr =
+    let ast = Parser.parse s in
+        Type.check ast;
+        eval_big ast
