@@ -1,4 +1,4 @@
-open Sml
+open Simpl
 
 let _ =
     let ast = Parser.parse (input_line stdin) in

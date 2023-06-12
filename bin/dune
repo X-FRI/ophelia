@@ -1,4 +1,4 @@
 (executable
- (public_name sml)
- (name main)
- (libraries sml))
+ (public_name simpl)
+ (name simpl)
+ (libraries simpl))

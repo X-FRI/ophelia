@@ -1,27 +1,27 @@
 (lang dune 3.7)
 (using menhir 2.0)
 
-(name sml)
+(name simpl)
 
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github muqiuhan/simpl))
 
-(authors "Author Name")
+(authors "Muqiu Han")
 
-(maintainers "Maintainer Name")
+(maintainers "Muqiu Han")
 
-(license LICENSE)
+(license MIT)
 
-(documentation https://url/to/documentation)
+(documentation https://github.com/muqiuhan/simpl)
 
 (package
- (name sml)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune)
+ (name simpl)
+ (synopsis "A simple programming language with simple type system")
+ (description "A simple programming language with simple type system")
+ (depends ocaml dune alcotest)
  (tags
-  (topics "to describe" your project)))
+  (type language)))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
