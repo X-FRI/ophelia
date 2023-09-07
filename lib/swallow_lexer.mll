@@ -1,5 +1,5 @@
 {
-    open Simpl_parser
+    open Swallow_parser
 }
 
 let white = [' ' '\t']+

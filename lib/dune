@@ -1,8 +1,9 @@
 (library
- (name simpl)
- (preprocess (pps ppx_deriving.show)))
+ (name swallow_lib)
+ (preprocess
+  (pps ppx_deriving.show)))
 
 (menhir
- (modules simpl_parser))
+ (modules swallow_parser))
 
-(ocamllex simpl_lexer)
+(ocamllex swallow_lexer)

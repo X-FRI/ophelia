@@ -1,12 +1,12 @@
 (lang dune 3.7)
 (using menhir 2.0)
 
-(name simpl)
+(name swallow)
 
 (generate_opam_files true)
 
 (source
- (github muqiuhan/simpl))
+ (github muqiuhan/swallow))
 
 (authors "Muqiu Han")
 
@@ -14,12 +14,12 @@
 
 (license MIT)
 
-(documentation https://github.com/muqiuhan/simpl)
+(documentation https://github.com/muqiuhan/swallow)
 
 (package
- (name simpl)
- (synopsis "A simple programming language with simple type system")
- (description "A simple programming language with simple type system")
+ (name swallow)
+ (synopsis "")
+ (description "")
  (depends ocaml dune alcotest)
  (tags
   (type language)))

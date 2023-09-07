@@ -1,4 +1,4 @@
 (executable
- (public_name simpl)
- (name simpl)
- (libraries simpl))
+ (public_name swallow)
+ (name swallow)
+ (libraries swallow_lib))
