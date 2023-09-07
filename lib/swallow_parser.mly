@@ -6,8 +6,10 @@
 %token <string> ID
 %token TRUE
 %token FALSE
-%token LEQ
-%token TIMES
+%token RIGHT_ALLOW
+%token MUL
+%token SUB
+%token DIV
 %token PLUS
 %token LPAREN
 %token RPAREN
@@ -18,12 +20,15 @@
 %token THEN
 %token ELSE
 %token EOF
+%token FUN
+%token LEFT_CURLY
+%token RIGHT_CURLY
 
 %nonassoc IN
 %nonassoc ELSE
-%left LEQ
 %left PLUS
-%left TIMES
+%left MUL
+%left RIGHT_ALLOW
 
 %start <Ast.expr> prog
 
@@ -34,14 +39,17 @@ prog:
 ;;
 
 expr:
-    | i = INT { Int i }
+    | i = INT { CstI i }
     | x = ID { Var x }
-    | TRUE { Bool true }
-    | FALSE { Bool false }
-    | e1 = expr; LEQ; e2 = expr { Binop (Leq, e1, e2) }
-    | e1 = expr; TIMES; e2 = expr { Binop (Mult, e1, e2) }
-    | e1 = expr; PLUS; e2 = expr { Binop (Add, e1, e2) }
-    | LET; x = ID; EQUALS; e1 = expr; IN; e2 = expr { Let (x, e1, e2) }
+    | TRUE { CstB true }
+    | FALSE { CstB false }
     | IF; e1 = expr; THEN; e2 = expr; ELSE; e3 = expr { If (e1, e2, e3) }
-    | LPAREN; e = expr; RPAREN {e}
+    | LET; x = ID; EQUALS; e1 = expr; IN; e2 = expr { Let (x, e1, e2) }
+    | FUN; f = ID; x = ID; RIGHT_ALLOW; e1 = expr; IN; e2 = expr { Fun (f, x, e1, e2) }
+    | f = ID; LPAREN; e = expr; RPAREN { Call(Var f, e) }
+    | e1 = expr; MUL; e2 = expr { Prim ("*", e1, e2) }
+    | e1 = expr; EQUALS; e2 = expr { Prim ("=", e1, e2) }
+    | e1 = expr; PLUS; e2 = expr { Prim ("+", e1, e2) }
+    | e1 = expr; SUB; e2 = expr { Prim ("-", e1, e2) }
+    | e1 = expr; DIV; e2 = expr { Prim ("/", e1, e2) }
 ;;

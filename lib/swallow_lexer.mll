@@ -13,12 +13,17 @@ rule read =
   | white { read lexbuf }
   | "true" { TRUE }
   | "false" { FALSE }
-  | "<=" { LEQ }
-  | "*" { TIMES }
+  | "->" { RIGHT_ALLOW }
+  | "{" { LEFT_CURLY }
+  | "}" { RIGHT_CURLY }
+  | "*" { MUL }
   | "+" { PLUS }
+  | "/" { DIV }
+  | "-" { SUB }
   | "(" { LPAREN }
   | ")" { RPAREN }
   | "let" { LET }
+  | "fun" { FUN }
   | "=" { EQUALS }
   | "in" { IN }
   | "if" { IF }

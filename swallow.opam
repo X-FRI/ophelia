@@ -12,6 +12,7 @@ bug-reports: "https://github.com/muqiuhan/swallow/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.7"}
+  "menhir"
   "alcotest"
   "odoc" {with-doc}
 ]

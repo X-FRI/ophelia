@@ -4,5 +4,4 @@ module Ast = Ast
 module Error = Error
 
 let interop s =
-    let ast = Parser.parse s in
-        Eval.eval ast
+    Parser.parse s

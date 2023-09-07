@@ -20,7 +20,7 @@
  (name swallow)
  (synopsis "")
  (description "")
- (depends ocaml dune alcotest)
+ (depends ocaml dune menhir alcotest)
  (tags
   (type language)))
 
