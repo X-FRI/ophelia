@@ -1,14 +1,12 @@
-+-------+
-| SimPL |
-+-------+
+<div align="center">
 
-    A simple programming language with simple type system
+# Swallow
 
-    Plagiarized from cs3110 SimPL :)
 
-o- Test with 
-    dune test 
-   Run with 
-    dune exec simpl
+![OCaml5.0](https://img.shields.io/badge/OCaml5.0.0-%23EC6813)
 
-o- CS3110 Interpreter : https://cs3110.github.io/textbook/chapters/interp/intro.html
+![](https://github.com/muqiuhan/swallow/workflows/Linux/badge.svg)
+![](https://github.com/muqiuhan/swallow/workflows/Windows/badge.svg)
+![](https://github.com/muqiuhan/swallow/workflows/MacOS/badge.svg)
+
+</div>
