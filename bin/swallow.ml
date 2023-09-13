@@ -34,4 +34,5 @@ let _ =
 
     try repl () with
     | End_of_file -> ()
-    | Failure msg -> Format.sprintf "\x1B[91m%s\x1B[0m" msg |> print_endline |> repl
+    | Failure msg ->
+        Format.sprintf "\x1B[91m%s\x1B[0m" msg |> print_endline |> repl

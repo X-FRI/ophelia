@@ -48,9 +48,10 @@ type value =
   | Value_closure of string * string * expr * value Env.t
 
 let type_of_id = function
-    | Identifier("Int") -> Type Type_int
-    | Identifier("Bool") -> Type Type_bool
-    | Identifier(t) -> failwith (Format.sprintf "type_of_string: unknown type %s" t)
+    | Identifier "Int" -> Type Type_int
+    | Identifier "Bool" -> Type Type_bool
+    | Identifier t ->
+        failwith (Format.sprintf "type_of_string: unknown type %s" t)
     | _ -> failwith "type_of_id: not a type expr"
 
 module Infer = struct
