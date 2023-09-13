@@ -7,3 +7,7 @@ type expr =
   | If of expr * expr * expr
   | Fun of string * string * expr * expr
   | Call of expr * expr
+
+type value =
+  | Int of int
+  | Closure of string * string * expr * value Env.t
