@@ -46,6 +46,7 @@ let rec eval (e : Ast.expr) (env : Ast.value Env.t) : int =
               | _ -> failwith "eval Call: not a function"
             end
     | Call _ -> failwith "eval Call: not first-order function"
+    | Type _ -> failwith "eval Type: WTF??"
 
 and eval_literal = function
     | Literal_int i -> i
@@ -66,7 +67,8 @@ and eval_def def env =
         let xVal = Value_int (eval erhs env) in
         let bodyEnv = (x, xVal) :: env in
             eval body bodyEnv
-    | Define_fun (f, x, f_body, body) ->
+    | Define_fun (f, x, _, f_body, _, body) as def ->
+        Infer.infer_define def [] |> ignore;
         let body_env = (f, Value_closure (f, x, f_body, env)) :: env in
             eval body body_env
 

@@ -44,8 +44,10 @@
 %token ELSE
 %token EOF
 %token FUN
-%token LEFT_CURLY
-%token RIGHT_CURLY
+%token LCURLY
+%token RCURLY
+%token DOUBLE_RIGHT_ALLOW
+%token COLON
 
 %nonassoc IN
 %nonassoc ELSE
@@ -68,11 +70,15 @@ expr:
     | FALSE { Literal(Literal_bool false) }
     | IF; e1 = expr; THEN; e2 = expr; ELSE; e3 = expr { If (e1, e2, e3) }
     | LET; x = ID; EQUALS; e1 = expr; IN; e2 = expr { Define(Define_var(x, e1, e2)) }
-    | FUN; f = ID; x = ID; RIGHT_ALLOW; e1 = expr; IN; e2 = expr { Define(Define_fun (f, x, e1, e2)) }
+    | FUN; f = ID; x = ID; COLON; x_type = expr; DOUBLE_RIGHT_ALLOW; r_type = expr; EQUALS; e1 = expr; IN; e2 = expr 
+        {
+            Define(Define_fun (f, x, type_of_id x_type, e1, type_of_id r_type, e2))
+        }
     | f = ID; LPAREN; e = expr; RPAREN { Call(Identifier f, e) }
     | e1 = expr; MUL; e2 = expr { Prim ("*", e1, e2) }
     | e1 = expr; EQUALS; e2 = expr { Prim ("=", e1, e2) }
     | e1 = expr; PLUS; e2 = expr { Prim ("+", e1, e2) }
     | e1 = expr; SUB; e2 = expr { Prim ("-", e1, e2) }
     | e1 = expr; DIV; e2 = expr { Prim ("/", e1, e2) }
+    | LPAREN; e = expr; RPAREN { e }
 ;;

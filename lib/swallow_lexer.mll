@@ -37,8 +37,10 @@ rule read =
   | "true" { TRUE }
   | "false" { FALSE }
   | "->" { RIGHT_ALLOW }
-  | "{" { LEFT_CURLY }
-  | "}" { RIGHT_CURLY }
+  | "=>" { DOUBLE_RIGHT_ALLOW }
+  | ":" { COLON }
+  | "{" { LCURLY }
+  | "}" { RCURLY }
   | "*" { MUL }
   | "+" { PLUS }
   | "/" { DIV }
