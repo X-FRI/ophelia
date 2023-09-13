@@ -22,12 +22,16 @@
  *)
 
 open Swallow_lib
+open Core
 
 let _ =
-    let repl () =
-        print_endline "> ";
-        let ast = Parser.parse (input_line stdin) in
-            Eval.eval ast []
+    let rec repl () =
+        print_string "> ";
+        Out_channel.flush stdout;
+        let ast = Parser.parse (In_channel.input_line_exn In_channel.stdin) in
+            Eval.eval ast [] |> Format.sprintf ":- %d" |> print_endline |> repl
     in
 
-    repl ()
+    try repl () with
+    | End_of_file -> ()
+    | Failure msg -> Format.sprintf "\x1B[91m%s\x1B[0m" msg |> print_endline |> repl

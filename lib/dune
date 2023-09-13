@@ -1,7 +1,8 @@
 (library
  (name swallow_lib)
  (preprocess
-  (pps ppx_deriving.show)))
+  (pps ppx_deriving.show))
+ (libraries core))
 
 (menhir
  (modules swallow_parser))
