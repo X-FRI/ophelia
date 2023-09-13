@@ -25,5 +25,4 @@ module Parser = Parser
 module Eval = Eval
 module Ast = Ast
 
-let interop s =
-    Parser.parse s
+let interop s = Parser.parse s

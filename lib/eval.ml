@@ -25,22 +25,58 @@ open Ast
 
 let rec eval (e : Ast.expr) (env : Ast.value Env.t) : int =
     match e with
-    | CstI i -> i
-    | CstB b ->
+    | Identifier id -> eval_value id env
+    | Literal literal -> eval_literal literal
+    | Define def -> eval_def def env
+    | Prim _ as prim -> eval_prim prim env
+    | If (e1, e2, e3) ->
+        let b = eval e1 env in
+            if b <> 0 then
+              eval e2 env
+            else
+              eval e3 env
+    | Call (Identifier f, args) ->
+        let closure = Env.lookup env f in
+            begin
+              match closure with
+              | Value_closure (f, x, body, decl_env) ->
+                  let x_val = Value_int (eval args env) in
+                  let body_env = (x, x_val) :: (f, closure) :: decl_env in
+                      eval body body_env
+              | _ -> failwith "eval Call: not a function"
+            end
+    | Call _ -> failwith "eval Call: not first-order function"
+
+and eval_literal = function
+    | Literal_int i -> i
+    | Literal_bool b ->
         if b then
           1
         else
           0
-    | Var x -> begin
-        match Env.lookup env x with
-        | Int i -> i
-        | _ -> failwith "eval Var"
-      end
-    | Prim (ope, e1, e2) ->
+
+and eval_value value env =
+    match Env.lookup env value with
+    | Value_int i -> i
+    | _ -> failwith "eval Var"
+
+and eval_def def env =
+    match def with
+    | Define_var (x, erhs, body) ->
+        let xVal = Value_int (eval erhs env) in
+        let bodyEnv = (x, xVal) :: env in
+            eval body bodyEnv
+    | Define_fun (f, x, f_body, body) ->
+        let body_env = (f, Value_closure (f, x, f_body, env)) :: env in
+            eval body body_env
+
+and eval_prim prim env =
+    match prim with
+    | Prim (op, e1, e2) ->
         let i1 = eval e1 env in
         let i2 = eval e2 env in
             begin
-              match ope with
+              match op with
               | "*" -> i1 * i2
               | "+" -> i1 + i2
               | "-" -> i1 - i2
@@ -54,29 +90,6 @@ let rec eval (e : Ast.expr) (env : Ast.value Env.t) : int =
                     1
                   else
                     0
-              | _ -> failwith (Format.sprintf "unknown primitive %s" ope)
+              | _ -> failwith (Format.sprintf "unknown primitive %s" op)
             end
-    | Let (x, eRhs, letBody) ->
-        let xVal = Int (eval eRhs env) in
-        let bodyEnv = (x, xVal) :: env in
-            eval letBody bodyEnv
-    | If (e1, e2, e3) ->
-        let b = eval e1 env in
-            if b <> 0 then
-              eval e2 env
-            else
-              eval e3 env
-    | Fun (f, x, fBody, letBody) ->
-        let bodyEnv = (f, Closure (f, x, fBody, env)) :: env in
-            eval letBody bodyEnv
-    | Call (Var f, eArg) ->
-        let fClosure = Env.lookup env f in
-            begin
-              match fClosure with
-              | Closure (f, x, fBody, fDeclEnv) ->
-                  let xVal = Int (eval eArg env) in
-                  let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv in
-                      eval fBody fBodyEnv
-              | _ -> failwith "eval Call: not a function"
-            end
-    | Call _ -> failwith "eval Call: not first-order function"
+    | _ -> failwith "prim"

@@ -62,14 +62,14 @@ prog:
 ;;
 
 expr:
-    | i = INT { CstI i }
-    | x = ID { Var x }
-    | TRUE { CstB true }
-    | FALSE { CstB false }
+    | i = INT { Literal(Literal_int i) }
+    | x = ID { Identifier x }
+    | TRUE { Literal(Literal_bool true) }
+    | FALSE { Literal(Literal_bool false) }
     | IF; e1 = expr; THEN; e2 = expr; ELSE; e3 = expr { If (e1, e2, e3) }
-    | LET; x = ID; EQUALS; e1 = expr; IN; e2 = expr { Let (x, e1, e2) }
-    | FUN; f = ID; x = ID; RIGHT_ALLOW; e1 = expr; IN; e2 = expr { Fun (f, x, e1, e2) }
-    | f = ID; LPAREN; e = expr; RPAREN { Call(Var f, e) }
+    | LET; x = ID; EQUALS; e1 = expr; IN; e2 = expr { Define(Define_var(x, e1, e2)) }
+    | FUN; f = ID; x = ID; RIGHT_ALLOW; e1 = expr; IN; e2 = expr { Define(Define_fun (f, x, e1, e2)) }
+    | f = ID; LPAREN; e = expr; RPAREN { Call(Identifier f, e) }
     | e1 = expr; MUL; e2 = expr { Prim ("*", e1, e2) }
     | e1 = expr; EQUALS; e2 = expr { Prim ("=", e1, e2) }
     | e1 = expr; PLUS; e2 = expr { Prim ("+", e1, e2) }

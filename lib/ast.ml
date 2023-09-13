@@ -22,15 +22,21 @@
  *)
 
 type expr =
-  | CstI of int
-  | CstB of bool
-  | Var of string
-  | Let of string * expr * expr
+  | Identifier of string
+  | Literal of literal
+  | Define of define
   | Prim of string * expr * expr
   | If of expr * expr * expr
-  | Fun of string * string * expr * expr
   | Call of expr * expr
 
+and literal =
+  | Literal_bool of bool
+  | Literal_int of int
+
+and define =
+  | Define_var of string * expr * expr
+  | Define_fun of string * string * expr * expr
+
 type value =
-  | Int of int
-  | Closure of string * string * expr * value Env.t
+  | Value_int of int
+  | Value_closure of string * string * expr * value Env.t
