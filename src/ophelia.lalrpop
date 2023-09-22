@@ -1,26 +1,40 @@
+use crate::ast::*;
+
 grammar;
 
 match {
   r"\s*" => {},
-  r"\#[^\n\r]*[\n\r]*" => {},
+  r"#[^\n\r]*[\n\r]*" => {},
   _
 }
 
-pub Program: String = <func_def: DefineFun> => func_def;
+pub Program: Program = <items: (GlobalItem)*> => Program { <> };
 
-DefineFun: String = {
-  "let" <id: Ident> "(" ")" "=>" <func_type: FunType> <block: Block> => {
-    format!("[Function]: {}(...) => {} {}", id, func_type, block)
+GlobalItem: GlobalItem = {
+  DefineFun => GlobalItem::DefineFun(<>),
+}
+
+DefineFun: DefineFun = {
+  "let" <name: Ident> "(" ")" "=>" <typ: FunType> <body: Block> => {
+    DefineFun { <> }
   }
 }
 
-FunType: String = "Int" => "Int".to_string();
+FunType: FunType = "Int" => FunType::Int;
 
-Block: String = "{" <stmt: Stmt> "}" => format!("{{ {} }}", stmt);
+Block: Block = "{" <items: (BlockItem)*> "}" => Block { <> };
 
-Stmt: String = "return" <num: Number> ";" => format!("return {};", num);
+BlockItem: BlockItem = {
+  Stmt => BlockItem::Stmt(<>),
+}
 
-Number: String = <num: IntConst> => num.to_string();
+Stmt: Stmt = {
+  MatchedStmt => <>
+}
+
+MatchedStmt: Stmt = {
+  "return" <expr: IntConst> ";" => Stmt::Return(Return { <> }),
+}
 
 Ident: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
 
