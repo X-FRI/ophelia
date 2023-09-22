@@ -1,3 +1,0 @@
-(test
- (name swallow_test)
- (libraries swallow_lib alcotest))

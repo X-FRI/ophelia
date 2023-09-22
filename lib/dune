@@ -1,8 +1,0 @@
-(library
- (name swallow_lib)
- (libraries core))
-
-(menhir
- (modules swallow_parser))
-
-(ocamllex swallow_lexer)

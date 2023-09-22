@@ -1,4 +1,0 @@
-(executable
- (public_name swallow)
- (name swallow)
- (libraries swallow_lib))
