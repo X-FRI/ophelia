@@ -16,7 +16,7 @@ pub enum GlobalItem {
 
 #[derive(Debug)]
 pub struct DefineFun {
-    pub pos:Position,
+    pub pos: Position,
     pub typ: FunType,
     pub ident: Ident,
     pub body: Block,
@@ -29,13 +29,13 @@ pub enum Type {
 
 #[derive(Debug)]
 pub struct FunType {
-    pub pos:Position,
+    pub pos: Position,
     pub typ: Type,
 }
 
 #[derive(Debug)]
 pub struct Block {
-    pub pos:Position,
+    pub pos: Position,
     pub items: Vec<BlockItem>,
 }
 
@@ -51,12 +51,12 @@ pub enum Stmt {
 
 #[derive(Debug)]
 pub struct Return {
-    pub pos:Position,
+    pub pos: Position,
     pub expr: i32,
 }
 
 #[derive(Debug)]
 pub struct Ident {
-    pub pos:Position,
+    pub pos: Position,
     pub name: String,
 }

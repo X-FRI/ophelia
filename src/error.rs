@@ -27,7 +27,7 @@ impl Reporter {
         let diagnostic = Diagnostic::error()
             .with_message(error.message)
             .with_code(error.code)
-            .with_labels(error.labels)            
+            .with_labels(error.labels)
             .with_notes(error.note);
 
         let writer = StandardStream::stderr(ColorChoice::Always);

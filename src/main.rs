@@ -8,7 +8,10 @@ use std::env::args;
 use std::fs::read_to_string;
 use std::io::Result;
 
-lalrpop_mod!(ophelia);
+lalrpop_mod! {
+    #[allow(clippy::all)]
+    ophelia
+}
 
 fn main() -> Result<()> {
     let mut args = args();
