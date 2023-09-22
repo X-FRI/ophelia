@@ -1,4 +1,5 @@
 mod ast;
+mod semantic_analysis;
 
 use lalrpop_util::lalrpop_mod;
 use std::env::args;
@@ -19,7 +20,7 @@ fn main() -> Result<()> {
     let input = read_to_string(input)?;
     let ast = ophelia::ProgramParser::new().parse(&input).unwrap();
 
-    println!("{:#?}", ast);
+    semantic_analysis::scan(&ast, &input);
 
     Ok(())
 }

@@ -15,28 +15,64 @@ GlobalItem: GlobalItem = {
 }
 
 DefineFun: DefineFun = {
-  "let" <name: Ident> "(" ")" "=>" <typ: FunType> <body: Block> => {
-    DefineFun { <> }
-  }
+  <start:@L>
+    "let" <ident: Ident> "(" ")" "=>" <typ: FunType> <body: Block>
+  <end:@R> =>
+    DefineFun { 
+      pos : Position {start, end},
+      ident, typ, body
+    }
 }
 
-FunType: FunType = "Int" => FunType::Int;
+FunType: FunType = {
+  <start:@L>
+    <typ: FunTypeRule>
+  <end:@R> =>
+    FunType {
+      pos : Position {start, end},
+      typ
+    }
+}
+FunTypeRule: Type = "Int" => Type::Int;
 
-Block: Block = "{" <items: (BlockItem)*> "}" => Block { <> };
+Block: Block = {
+  <start:@L>
+    "{" <items: (BlockItem)*> "}"
+  <end:@R> =>
+    Block {
+      pos : Position {start, end},
+      items
+    }
+}
 
 BlockItem: BlockItem = {
   Stmt => BlockItem::Stmt(<>),
 }
 
 Stmt: Stmt = {
-  MatchedStmt => <>
+  Return => <>
 }
 
-MatchedStmt: Stmt = {
-  "return" <expr: IntConst> ";" => Stmt::Return(Return { <> }),
+Return: Stmt = {
+  <start:@L>
+    "return" <expr: IntConst> ";"
+  <end:@R> => 
+    Stmt::Return(Return {
+      pos : Position {start, end},
+      expr
+    })
 }
 
-Ident: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+Ident: Ident = {
+  <start:@L>
+    <name: IdentRule>
+  <end:@R> => 
+    Ident {
+      pos: Position {start, end},
+      name
+    }
+}
+IdentRule: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
 
 IntConst: i32 = {
   r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap(),

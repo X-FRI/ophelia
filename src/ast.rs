@@ -1,4 +1,10 @@
 #[derive(Debug)]
+pub struct Position {
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Debug)]
 pub struct Program {
     pub items: Vec<GlobalItem>,
 }
@@ -10,18 +16,26 @@ pub enum GlobalItem {
 
 #[derive(Debug)]
 pub struct DefineFun {
+    pub pos:Position,
     pub typ: FunType,
-    pub name: String,
+    pub ident: Ident,
     pub body: Block,
 }
 
 #[derive(Debug)]
-pub enum FunType {
+pub enum Type {
     Int,
 }
 
 #[derive(Debug)]
+pub struct FunType {
+    pub pos:Position,
+    pub typ: Type,
+}
+
+#[derive(Debug)]
 pub struct Block {
+    pub pos:Position,
     pub items: Vec<BlockItem>,
 }
 
@@ -37,5 +51,12 @@ pub enum Stmt {
 
 #[derive(Debug)]
 pub struct Return {
+    pub pos:Position,
     pub expr: i32,
+}
+
+#[derive(Debug)]
+pub struct Ident {
+    pub pos:Position,
+    pub name: String,
 }
