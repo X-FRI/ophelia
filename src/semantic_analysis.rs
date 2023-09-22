@@ -1,34 +1,30 @@
-use crate::ast::{self, DefineFun, GlobalItem};
-use ariadne::{ColorGenerator, Label, Report, ReportKind, Source};
+use codespan_reporting::diagnostic::Label;
 
-pub fn scan(ast: &ast::Program, source: &String) {
+use crate::{
+    ast::{self, DefineFun, GlobalItem},
+    error::{self, Reporter},
+};
+
+pub fn scan(ast: &ast::Program, reporter: &Reporter) {
     for item in &ast.items {
         match item {
-            GlobalItem::DefineFun(fun) => scan_fun_def(fun, source),
+            GlobalItem::DefineFun(fun) => scan_fun_def(fun, reporter),
         }
     }
 }
 
-fn scan_fun_def(fun: &DefineFun, source: &String) {
+fn scan_fun_def(fun: &DefineFun, reporter: &Reporter) {
     if fun.ident.name != "main" {
-        let mut colors = ColorGenerator::new();
-
-        Report::build(ReportKind::Error, "helloworld.oph", 4)
-            .with_code(3)
-            .with_message(format!("Incorrect main function"))
-            .with_label(
-                Label::new(("hello_world.oph", fun.pos.start..fun.pos.end))
-                    .with_message("This should be the definition of the main function")
-                    .with_color(colors.next())
-            )
-            .with_label(
-                Label::new(("hello_world.oph", fun.ident.pos.start..fun.ident.pos.end))
-                    .with_message("Change to `main`")
-                    .with_color(colors.next()),
-            )
-            .with_note("The entry module should start with the main function")
-            .finish()
-            .print(("hello_world.oph", Source::from(source)))
-            .unwrap()
+        reporter.report(error::Error {
+            message: String::from("Incorrect main function"),
+            code: String::from("E0001"),
+            labels: vec![
+                Label::primary(reporter.id, fun.ident.pos.start..fun.ident.pos.end)
+                    .with_message(format!("expected `main`, found {}", fun.ident.name)),
+            ],
+            note: vec![String::from(
+                "The entry module should start with the main function",
+            )],
+        })
     }
 }
