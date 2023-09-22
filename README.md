@@ -10,6 +10,47 @@ A minimalist imperative language compiled to RISC-V for [OpheliaOS](https://gith
 
 </div>
 
+## Syntax
+```ebnf
+# identifier-nondigit is the underline, lowercase letters or uppercase letters
+# digit is 0~9
+identifier ::= identifier-nondigit
+             | identifier identifier-nondigit
+             | identifier digit;
+
+# nonzero-digit is 1~9
+# octal-digit is 0~7
+# hexadecimal-digit is 0~9, or (lower/upper)case letter A~f
+integer-const ::= decimal-const
+                  | octal-const
+                  | hexadecimal-const;
+
+decimal-const ::= nonzero-digit
+                  | decimal-const digit;
+
+octal-const ::= "0"
+                | octal-const octal-digit;
+
+hexadecimal-const ::= hexadecimal-prefix hexadecimal-digit
+                      | hexadecimal-const hexadecimal-digit;
+
+hexadecimal-prefix ::= "0x" | "0X";
+
+comment ::= single-line-comment
+single-line-comment ::= "#"
+
+CompUnit  ::= FuncDef;
+
+FuncDef   ::= FuncType IDENT "(" ")" Block;
+FuncType  ::= "int";
+
+Block     ::= "{" Stmt "}";
+Stmt      ::= "return" Number ";";
+
+# The range of INT_CONST is 0~(2^31-1) (no negative sign).
+Number    ::= INT_CONST;
+```
+
 ## LICENSE
 The MIT License (MIT)
 
