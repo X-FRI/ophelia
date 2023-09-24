@@ -52,11 +52,41 @@ pub enum Stmt {
 #[derive(Debug)]
 pub struct Return {
     pub pos: Position,
-    pub expr: i32,
+    pub expr: Expr,
 }
 
 #[derive(Debug)]
 pub struct Ident {
     pub pos: Position,
     pub name: String,
+}
+
+#[derive(Debug)]
+pub enum Expr {
+    UnaryExpr(Box<UnaryExpr>)
+}
+
+#[derive(Debug)]
+pub enum UnaryExpr {
+    Primary(PrimaryExpr),
+    Unary(UnaryOp, Box<UnaryExpr>)
+}
+
+#[derive(Debug)]
+pub enum PrimaryExpr {
+    Expr(Box<Expr>),
+    Number(Number),
+}
+
+#[derive(Debug)]
+pub enum UnaryOp {
+   Add(Position),
+   Sub(Position),
+   Not(Position),
+}
+
+#[derive(Debug)]
+pub struct Number {
+    pub pos: Position,
+    pub value: i32
 }

@@ -35,6 +35,47 @@ FunType: FunType = {
 }
 FunTypeRule: Type = "Int" => Type::Int;
 
+Ident: Ident = {
+  <start:@L>
+    <name: IdentRule>
+  <end:@R> => 
+    Ident {
+      pos: Position {start, end},
+      name
+    }
+}
+IdentRule: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+
+Number: Number = {
+  <start:@L>
+    <value: DecimalNumberRule>
+  <end:@R> =>
+    Number {
+      value,
+      pos: Position { start, end }
+    },
+  
+  <start:@L>
+    <value: OctalNumberRule>
+  <end:@R> =>
+    Number {
+      value,
+      pos: Position { start, end }
+    },
+  
+  <start:@L>
+    <value: HexNumberRule>
+  <end:@R> =>
+    Number {
+      value,
+      pos: Position { start, end }
+    },
+}
+
+DecimalNumberRule: i32 = r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap();
+OctalNumberRule: i32 = r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap();
+HexNumberRule: i32 = r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap();
+
 Block: Block = {
   <start:@L>
     "{" <items: (BlockItem)*> "}"
@@ -42,7 +83,7 @@ Block: Block = {
     Block {
       pos : Position {start, end},
       items
-    }
+    },
 }
 
 BlockItem: BlockItem = {
@@ -55,27 +96,35 @@ Stmt: Stmt = {
 
 Return: Stmt = {
   <start:@L>
-    "return" <expr: IntConst> ";"
-  <end:@R> => 
+    "return" <expr: Expr> ";"
+  <end:@R> =>
     Stmt::Return(Return {
       pos : Position {start, end},
       expr
     })
 }
 
-Ident: Ident = {
-  <start:@L>
-    <name: IdentRule>
-  <end:@R> => 
-    Ident {
-      pos: Position {start, end},
-      name
-    }
+Expr: Expr = {
+  UnaryExpr => Expr::UnaryExpr(Box::new( <> ))
 }
-IdentRule: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
 
-IntConst: i32 = {
-  r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap(),
-  r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap(),
-  r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap(),
+UnaryExpr: UnaryExpr = {
+  PrimaryExpr => UnaryExpr::Primary( <> ),
+  <op: UnaryOp> <expr: UnaryExpr> => UnaryExpr::Unary(op, Box::new(expr))
+}
+
+PrimaryExpr: PrimaryExpr = {
+  "("
+    <start:@L>
+      <expr: Expr>
+    <end:@R>
+  ")" =>
+    PrimaryExpr::Expr(Box::new(expr)),
+  Number => PrimaryExpr::Number( <> ),
+}
+
+UnaryOp: UnaryOp = {
+  <start:@L> "-" <end:@R> => UnaryOp::Sub(Position { <> }),
+  <start:@L> "+" <end:@R> => UnaryOp::Add(Position { <> }),
+  <start:@L> "!" <end:@R> => UnaryOp::Not(Position { <> }),
 }
