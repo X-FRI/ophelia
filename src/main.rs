@@ -2,7 +2,7 @@ mod ast;
 mod error;
 mod semantic_analysis;
 mod ir;
-mod target;
+mod asm;
 
 use error::Reporter;
 use lalrpop_util::lalrpop_mod;
@@ -31,7 +31,9 @@ fn main() -> Result<()> {
     let ast = ophelia::ProgramParser::new().parse(&source_code).unwrap();
 
     semantic_analysis::scan(&ast, &reporter);
-    println!("{}", ir::gen(&ast));
+    let ir = ir::gen_bin(&ast);
+
+    println!("{}", asm::gen(&ir));
 
     Ok(())
 }
