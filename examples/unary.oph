@@ -1,0 +1,4 @@
+let main() => Int {
+    # Look like a kaomoji
+    return +(- -!6);
+}

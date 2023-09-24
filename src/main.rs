@@ -31,9 +31,13 @@ fn main() -> Result<()> {
     let ast = ophelia::ProgramParser::new().parse(&source_code).unwrap();
 
     semantic_analysis::scan(&ast, &reporter);
-    let ir = ir::gen_bin(&ast);
 
-    println!("{}", asm::gen(&ir));
+    let ir = ir::gen(&ast);
+
+    println!("{}", ir);
+    // asm::gen(&ir);
+
+    println!("done");
 
     Ok(())
 }
