@@ -1,0 +1,4 @@
+# The entry module should start with the main function
+let main() => Int {
+    return 0;
+}

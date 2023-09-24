@@ -1,3 +1,0 @@
-let hello() => Int {
-    return 0;
-}
