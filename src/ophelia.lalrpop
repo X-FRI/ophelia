@@ -47,7 +47,7 @@ ConstDecl: ConstDecl = {
 ConstDef: ConstDef = {
   <start:@L>
     <id: Ident>
-    <dims: ("[" <ConstExp> "]")*>
+    <dims: ("[" <ConstExpr> "]")*>
     "="
     <init: ConstInitVal>
   <end:@R> => {
@@ -61,7 +61,7 @@ ConstDef: ConstDef = {
 }
 
 ConstInitVal: ConstInitVal = {
-  ConstExp => ConstInitVal::Exp(<>),
+  ConstExpr => ConstInitVal::Expr(<>),
   "{" "}" => ConstInitVal::List(Vec::new()),
   "{" <init: ConstInitVal> <mut inits: ("," <ConstInitVal>)*> "}" => {
     inits.insert(0, init);
@@ -87,7 +87,7 @@ VarDecl: VarDecl = {
 VarDef: VarDef = {
   <start:@L>
     <id: Ident>
-    <dims: ("[" <ConstExp> "]")*>
+    <dims: ("[" <ConstExpr> "]")*>
     <init: ("=" <InitVal>)?> 
   <end:@R> => {
     VarDef {
@@ -100,7 +100,7 @@ VarDef: VarDef = {
 }
 
 InitVal: InitVal = {
-  Exp => InitVal::Exp(<>),
+  Expr => InitVal::Expr(<>),
   "{" "}" => InitVal::List(Vec::new()),
   "{" <init: InitVal> <mut inits: ("," <InitVal>)*> "}" => {
     inits.insert(0, init);
@@ -158,7 +158,7 @@ FuncFParam: FuncFParam = {
   <start:@L>
     <typ: Type>
     <id: Ident>
-    <dims: ("[" "]" <("[" <ConstExp> "]")*>)?>
+    <dims: ("[" "]" <("[" <ConstExpr> "]")*>)?>
   <end:@R> => {
     FuncFParam {
       typ,
@@ -196,7 +196,7 @@ MatchedStmt: Stmt = {
   <start:@L>
     <lval: LVal>
     "="
-    <exp: Exp>
+    <exp: Expr>
     ";"
   <end:@R> => {
     Stmt::Assign(Assign {
@@ -207,10 +207,10 @@ MatchedStmt: Stmt = {
   },
 
   <start:@L>
-    <exp: (Exp)?>
+    <exp: (Expr)?>
     ";"
   <end:@R> => {
-    Stmt::ExpStmt(ExpStmt {
+    Stmt::ExprStmt(ExprStmt {
       exp,
       pos :Position(start, end)
     })
@@ -221,7 +221,7 @@ MatchedStmt: Stmt = {
   <start:@L>
     "if"
     "("
-    <cond: Exp>
+    <cond: Expr>
     ")"
     <then: MatchedStmt>
     "else"
@@ -238,7 +238,7 @@ MatchedStmt: Stmt = {
   <start:@L>
     "while"
     "("
-    <cond: Exp>
+    <cond: Expr>
     ")"
     <body: MatchedStmt>
   <end:@R> => {
@@ -269,7 +269,7 @@ MatchedStmt: Stmt = {
 
   <start:@L>
     "return"
-    <exp: (Exp)?>
+    <exp: (Expr)?>
     ";"
   <end:@R> => {
     Stmt::Return(Return {
@@ -282,7 +282,7 @@ OpenStmt: Stmt = {
   <start:@L>
     "if"
     "("
-    <cond: Exp>
+    <cond: Expr>
     ")"
     <then: Stmt>
   <end:@R> => {
@@ -297,7 +297,7 @@ OpenStmt: Stmt = {
   <start:@L>
     "if"
     "("
-    <cond: Exp>
+    <cond: Expr>
     ")"
     <then: MatchedStmt>
     "else"
@@ -314,7 +314,7 @@ OpenStmt: Stmt = {
   <start:@L>
     "while"
     "("
-    <cond: Exp>
+    <cond: Expr>
     ")"
     <body: OpenStmt>
   <end:@R> => {
@@ -326,11 +326,11 @@ OpenStmt: Stmt = {
   },
 }
 
-Exp: Exp = {
+Expr: Expr = {
   <start:@L>
-    <lor: LOrExp>
+    <lor: LOrExpr>
   <end:@R> => {
-    Exp {
+    Expr {
       lor,
       pos: Position(start, end)
     }
@@ -340,7 +340,7 @@ Exp: Exp = {
 LVal: LVal = {
   <start:@L>
     <id: Ident>
-    <indices: ("[" <Exp> "]")*>
+    <indices: ("[" <Expr> "]")*>
   <end:@R> => {
     LVal {
       id,
@@ -350,21 +350,21 @@ LVal: LVal = {
   }
 }
 
-PrimaryExp: PrimaryExp = {
-  "(" <Exp> ")" => PrimaryExp::Exp(Box::new(<>)),
-  LVal => PrimaryExp::LVal(<>),
-  Number => PrimaryExp::Number(<>),
+PrimaryExpr: PrimaryExpr = {
+  "(" <Expr> ")" => PrimaryExpr::Expr(Box::new(<>)),
+  LVal => PrimaryExpr::LVal(<>),
+  Number => PrimaryExpr::Number(<>),
 }
 
-UnaryExp: UnaryExp = {
-  PrimaryExp => UnaryExp::Primary(<>),
+UnaryExpr: UnaryExpr = {
+  PrimaryExpr => UnaryExpr::Primary(<>),
   
   <start:@L>
     <id: Ident>
     "("
     ")"
   <end:@R> => {
-    UnaryExp::Call(FuncCall {
+    UnaryExpr::Call(FuncCall {
       id,
       args: Vec::new(),
       pos: Position(start, end)
@@ -374,69 +374,69 @@ UnaryExp: UnaryExp = {
   <start:@L>
     <id: Ident>
     "("
-    <arg: Exp>
-    <mut args: ("," <Exp>)*>
+    <arg: Expr>
+    <mut args: ("," <Expr>)*>
     ")"
   <end:@R> => {
     args.insert(0, arg);
-    UnaryExp::Call(FuncCall {
+    UnaryExpr::Call(FuncCall {
       id,
       args,
       pos: Position(start, end)
     })
   },
 
-  "+" <UnaryExp> => <>,
-  <op: UnaryOp> <exp: UnaryExp> => UnaryExp::Unary(op, Box::new(exp)),
+  "+" <UnaryExpr> => <>,
+  <op: UnaryOp> <exp: UnaryExpr> => UnaryExpr::Unary(op, Box::new(exp)),
 }
 
-MulExp: MulExp = {
-  UnaryExp => MulExp::Unary(<>),
-  <lhs: MulExp> <op: MulOp> <rhs: UnaryExp> => {
-    MulExp::MulUnary(Box::new(lhs), op, rhs)
+MulExpr: MulExpr = {
+  UnaryExpr => MulExpr::Unary(<>),
+  <lhs: MulExpr> <op: MulOp> <rhs: UnaryExpr> => {
+    MulExpr::MulUnary(Box::new(lhs), op, rhs)
   }
 }
 
-AddExp: AddExp = {
-  MulExp => AddExp::Mul(<>),
-  <lhs: AddExp> <op: AddOp> <rhs: MulExp> => {
-    AddExp::AddMul(Box::new(lhs), op, rhs)
+AddExpr: AddExpr = {
+  MulExpr => AddExpr::Mul(<>),
+  <lhs: AddExpr> <op: AddOp> <rhs: MulExpr> => {
+    AddExpr::AddMul(Box::new(lhs), op, rhs)
   }
 }
 
-RelExp: RelExp = {
-  AddExp => RelExp::Add(<>),
-  <lhs: RelExp> <op: RelOp> <rhs: AddExp> => {
-    RelExp::RelAdd(Box::new(lhs), op, rhs)
+RelExpr: RelExpr = {
+  AddExpr => RelExpr::Add(<>),
+  <lhs: RelExpr> <op: RelOp> <rhs: AddExpr> => {
+    RelExpr::RelAdd(Box::new(lhs), op, rhs)
   }
 }
 
-EqExp: EqExp = {
-  RelExp => EqExp::Rel(<>),
-  <lhs: EqExp> <op: EqOp> <rhs: RelExp> => {
-    EqExp::EqRel(Box::new(lhs), op, rhs)
+EqExpr: EqExpr = {
+  RelExpr => EqExpr::Rel(<>),
+  <lhs: EqExpr> <op: EqOp> <rhs: RelExpr> => {
+    EqExpr::EqRel(Box::new(lhs), op, rhs)
   }
 }
 
-LAndExp: LAndExp = {
-  EqExp => LAndExp::Eq(<>),
-  <lhs: LAndExp> "&&" <rhs: EqExp> => {
-    LAndExp::LAndEq(Box::new(lhs), rhs)
+LAndExpr: LAndExpr = {
+  EqExpr => LAndExpr::Eq(<>),
+  <lhs: LAndExpr> "&&" <rhs: EqExpr> => {
+    LAndExpr::LAndEq(Box::new(lhs), rhs)
   }
 }
 
-LOrExp: LOrExp = {
-  LAndExp => LOrExp::LAnd(<>),
-  <lhs: LOrExp> "||" <rhs: LAndExp> => {
-    LOrExp::LOrLAnd(Box::new(lhs), rhs)
+LOrExpr: LOrExpr = {
+  LAndExpr => LOrExpr::LAnd(<>),
+  <lhs: LOrExpr> "||" <rhs: LAndExpr> => {
+    LOrExpr::LOrLAnd(Box::new(lhs), rhs)
   }
 }
 
-ConstExp: ConstExp = {
+ConstExpr: ConstExpr = {
   <start:@L>
-    <exp: Exp>
+    <exp: Expr>
   <end:@R> => {
-    ConstExp {
+    ConstExpr {
       exp,
       pos: Position(start, end)
     }

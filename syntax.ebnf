@@ -31,11 +31,11 @@ FuncDef   ::= FuncType IDENT "(" ")" Block;
 FuncType  ::= "int";
 
 Block     ::= "{" Stmt "}";
-Stmt      ::= "return" Exp ";";
+Stmt      ::= "return" Expr ";";
 
-Expr        ::= UnaryExpr;
-PrimaryExpr ::= "(" Expr ")" | Number;
-UnaryExpr   ::= PrimaryExpr | UnaryOp UnaryExpr;
+Exprr        ::= UnaryExprr;
+PrimaryExprr ::= "(" Exprr ")" | Number;
+UnaryExprr   ::= PrimaryExprr | UnaryOp UnaryExprr;
 UnaryOp     ::= "+" | "-" | "!";
 
 # The range of INT_CONST is 0~(2^31-1) (no negative sign).

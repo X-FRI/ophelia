@@ -1,24 +1,22 @@
 mod eval;
-mod func;
+mod fun;
 mod gen;
 mod scopes;
 mod values;
 
-use crate::ast::{CompUnit, ConstExp};
+use crate::ast::{CompUnit, ConstExpr};
 use eval::Evaluate;
 use gen::GenerateProgram;
 use koopa::ir::{Program, Type};
 use scopes::Scopes;
 use std::fmt;
 
-/// Generates Koopa IR program for the given compile unit (ASTs).
-pub fn generate_program(comp_unit: &CompUnit) -> Result<Program> {
+pub fn gen(comp_unit: &CompUnit) -> Result<Program> {
     let mut program = Program::new();
-    comp_unit.generate(&mut program, &mut Scopes::new())?;
+    comp_unit.gen(&mut program, &mut Scopes::new())?;
     Ok(program)
 }
 
-/// Error returned by IR generator.
 pub enum Error {
     DuplicatedDef,
     SymbolNotFound,
@@ -67,7 +65,7 @@ pub(crate) trait DimsToType {
     fn to_type(&self, scopes: &Scopes) -> Result<Type>;
 }
 
-impl DimsToType for Vec<ConstExp> {
+impl DimsToType for Vec<ConstExpr> {
     fn to_type(&self, scopes: &Scopes) -> Result<Type> {
         self.iter().rev().fold(Ok(Type::get_i32()), |b, exp| {
             let base = b?;

@@ -1,6 +1,6 @@
 use super::builder::AsmBuilder;
-use super::func::FunctionInfo;
-use super::info::{cur_func, cur_func_mut, ProgramInfo};
+use super::fun::FunctionInfo;
+use super::info::{current_fun, current_fun_mut, ProgramInfo};
 use super::values::{asm_value, AsmValue, LocalValue};
 use koopa::ir::entities::ValueData;
 use koopa::ir::values::*;
@@ -42,10 +42,10 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for Program {
             data.generate(f, info)?;
             writeln!(f)?;
         }
-        // generate functions
-        for &func in self.func_layout() {
-            info.set_cur_func(FunctionInfo::new(func));
-            self.func(func).generate(f, info)?;
+        // generate funtions
+        for &fun in self.fun_layout() {
+            info.set_current_fun(FunctionInfo::new(fun));
+            self.fun(fun).generate(f, info)?;
         }
         Ok(())
     }
@@ -55,7 +55,7 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for Function {
     type Out = &'p str;
 
     fn generate(&self, _: &mut File, info: &mut ProgramInfo<'p>) -> Result<Self::Out> {
-        Ok(&info.program().func(*self).name()[1..])
+        Ok(&info.program().fun(*self).name()[1..])
     }
 }
 
@@ -68,25 +68,25 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for FunctionData {
             return Ok(());
         }
         // allocation stack slots and log argument number
-        let func = cur_func_mut!(info);
+        let fun = current_fun_mut!(info);
         for value in self.dfg().values().values() {
             // allocate stack slot
             if value.kind().is_local_inst() && !value.used_by().is_empty() {
-                func.alloc_slot(value);
+                fun.alloc_slot(value);
             }
             // log argument number
             if let ValueKind::Call(call) = value.kind() {
-                func.log_arg_num(call.args().len());
+                fun.log_arg_num(call.args().len());
             }
         }
         // generate basic block names
         for (&bb, data) in self.dfg().bbs() {
             // basic block parameters are not supported
             assert!(data.params().is_empty());
-            func.log_bb_name(bb, data.name());
+            fun.log_bb_name(bb, data.name());
         }
         // generate prologue
-        AsmBuilder::new(f, "t0").prologue(self.name(), func)?;
+        AsmBuilder::new(f, "t0").prologue(self.name(), fun)?;
         // generate instructions in basic blocks
         for (bb, node) in self.layout().bbs() {
             let name = bb.generate(f, info)?;
@@ -103,7 +103,7 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for BasicBlock {
     type Out = &'i str;
 
     fn generate(&self, _: &mut File, info: &'i mut ProgramInfo) -> Result<Self::Out> {
-        Ok(cur_func!(info).bb_name(*self))
+        Ok(current_fun!(info).bb_name(*self))
     }
 }
 
@@ -114,12 +114,12 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for Value {
         if self.is_global() {
             Ok(AsmValue::Global(info.value(*self)))
         } else {
-            let func = cur_func!(info);
-            let value = info.program().func(func.func()).dfg().value(*self);
+            let fun = current_fun!(info);
+            let value = info.program().fun(fun.fun()).dfg().value(*self);
             Ok(match value.kind() {
                 ValueKind::Integer(i) => AsmValue::Const(i.value()),
                 ValueKind::FuncArgRef(i) => AsmValue::Arg(i.index()),
-                _ => AsmValue::from(func.slot_offset(value)),
+                _ => AsmValue::from(fun.slot_offset(value)),
             })
         }
     }
@@ -200,7 +200,7 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for Store {
     type Out = ();
 
     fn generate(&self, f: &mut File, info: &mut ProgramInfo) -> Result<Self::Out> {
-        let sp_offset = cur_func!(info).sp_offset();
+        let sp_offset = current_fun!(info).sp_offset();
         let value = self.value().generate(f, info)?;
         if matches!(value, AsmValue::Arg(_)) {
             value.write_arg_to(f, "t0", sp_offset)?;
@@ -354,6 +354,6 @@ impl<'p, 'i> GenerateToAsm<'p, 'i> for Return {
         if let Some(value) = self.value() {
             value.generate(f, info)?.write_to(f, "a0")?;
         }
-        AsmBuilder::new(f, "t0").epilogue(cur_func!(info))
+        AsmBuilder::new(f, "t0").epilogue(current_fun!(info))
     }
 }

@@ -4,7 +4,7 @@ use koopa::ir::{BasicBlock, Function, Program, Type};
 
 /// Function information.
 pub struct FunctionInfo {
-    func: Function,
+    fun: Function,
     entry: BasicBlock,
     end: BasicBlock,
     cur: BasicBlock,
@@ -12,10 +12,10 @@ pub struct FunctionInfo {
 }
 
 impl FunctionInfo {
-    /// Creates a new function information.
-    pub fn new(func: Function, entry: BasicBlock, end: BasicBlock, ret_val: Option<Value>) -> Self {
+    /// Creates a new funtion information.
+    pub fn new(fun: Function, entry: BasicBlock, end: BasicBlock, ret_val: Option<Value>) -> Self {
         Self {
-            func,
+            fun,
             entry,
             end,
             cur: entry,
@@ -23,9 +23,9 @@ impl FunctionInfo {
         }
     }
 
-    /// Returns the curren function.
-    pub fn func(&self) -> Function {
-        self.func
+    /// Returns the curren funtion.
+    pub fn fun(&self) -> Function {
+        self.fun
     }
 
     /// Returns the end basic block.
@@ -38,25 +38,25 @@ impl FunctionInfo {
         self.ret_val
     }
 
-    /// Creates a new basic block in function.
+    /// Creates a new basic block in funtion.
     pub fn new_bb(&self, program: &mut Program, name: Option<&str>) -> BasicBlock {
         program
-            .func_mut(self.func)
+            .fun_mut(self.fun)
             .dfg_mut()
             .new_bb()
             .basic_block(name.map(|s| s.into()))
     }
 
-    /// Creates a new value in function.
+    /// Creates a new value in funtion.
     pub fn new_value<'p>(&self, program: &'p mut Program) -> LocalBuilder<'p> {
-        program.func_mut(self.func).dfg_mut().new_value()
+        program.fun_mut(self.fun).dfg_mut().new_value()
     }
 
-    /// Pushes the basic block to the function,
+    /// Pushes the basic block to the funtion,
     /// updates the current basic block.
     pub fn push_bb(&mut self, program: &mut Program, bb: BasicBlock) {
         program
-            .func_mut(self.func)
+            .fun_mut(self.fun)
             .layout_mut()
             .bbs_mut()
             .push_key_back(bb)
@@ -67,7 +67,7 @@ impl FunctionInfo {
     /// Pushes the instruction to the back of the given basic block.
     pub fn push_inst_to(&self, program: &mut Program, bb: BasicBlock, inst: Value) {
         program
-            .func_mut(self.func)
+            .fun_mut(self.fun)
             .layout_mut()
             .bb_mut(bb)
             .insts_mut()
@@ -85,7 +85,7 @@ impl FunctionInfo {
         let alloc = self.new_value(program).alloc(ty);
         if let Some(name) = name {
             program
-                .func_mut(self.func)
+                .fun_mut(self.fun)
                 .dfg_mut()
                 .set_value_name(alloc, Some(format!("@{}", name)));
         }
@@ -99,8 +99,8 @@ impl FunctionInfo {
         self.push_inst_to(program, self.entry, jump);
     }
 
-    /// Seals the function.
-    pub fn seal_func(&mut self, program: &mut Program) {
+    /// Seals the funtion.
+    pub fn seal_fun(&mut self, program: &mut Program) {
         // jump to the end basic block
         let jump = self.new_value(program).jump(self.end);
         self.push_inst(program, jump);

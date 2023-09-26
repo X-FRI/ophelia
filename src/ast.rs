@@ -34,14 +34,14 @@ pub struct ConstDecl {
 #[derive(Debug)]
 pub struct ConstDef {
     pub id: Ident,
-    pub dims: Vec<ConstExp>,
+    pub dims: Vec<ConstExpr>,
     pub init: ConstInitVal,
     pub pos: Position,
 }
 
 #[derive(Debug)]
 pub enum ConstInitVal {
-    Exp(ConstExp),
+    Expr(ConstExpr),
     List(Vec<ConstInitVal>),
 }
 
@@ -54,14 +54,14 @@ pub struct VarDecl {
 #[derive(Debug)]
 pub struct VarDef {
     pub id: Ident,
-    pub dims: Vec<ConstExp>,
+    pub dims: Vec<ConstExpr>,
     pub init: Option<InitVal>,
     pub pos: Position,
 }
 
 #[derive(Debug)]
 pub enum InitVal {
-    Exp(Exp),
+    Expr(Expr),
     List(Vec<InitVal>),
 }
 
@@ -84,7 +84,7 @@ pub enum Type {
 pub struct FuncFParam {
     pub typ: Type,
     pub id: Ident,
-    pub dims: Option<Vec<ConstExp>>,
+    pub dims: Option<Vec<ConstExpr>>,
     pub pos: Position,
 }
 
@@ -104,7 +104,7 @@ pub enum BlockItem {
 #[derive(Debug)]
 pub enum Stmt {
     Assign(Assign),
-    ExpStmt(ExpStmt),
+    ExprStmt(ExprStmt),
     Block(Block),
     If(Box<If>),
     While(Box<While>),
@@ -116,19 +116,19 @@ pub enum Stmt {
 #[derive(Debug)]
 pub struct Assign {
     pub lval: LVal,
-    pub exp: Exp,
+    pub exp: Expr,
     pub pos: Position,
 }
 
 #[derive(Debug)]
-pub struct ExpStmt {
-    pub exp: Option<Exp>,
+pub struct ExprStmt {
+    pub exp: Option<Expr>,
     pub pos: Position,
 }
 
 #[derive(Debug)]
 pub struct If {
-    pub cond: Exp,
+    pub cond: Expr,
     pub then: Stmt,
     pub else_then: Option<Stmt>,
     pub pos: Position,
@@ -136,7 +136,7 @@ pub struct If {
 
 #[derive(Debug)]
 pub struct While {
-    pub cond: Exp,
+    pub cond: Expr,
     pub body: Stmt,
     pub pos: Position,
 }
@@ -153,26 +153,26 @@ pub struct Continue {
 
 #[derive(Debug)]
 pub struct Return {
-    pub exp: Option<Exp>,
+    pub exp: Option<Expr>,
     pub pos: Position,
 }
 
 #[derive(Debug)]
-pub struct Exp {
-    pub lor: LOrExp,
+pub struct Expr {
+    pub lor: LOrExpr,
     pub pos: Position,
 }
 
 #[derive(Debug)]
 pub struct LVal {
     pub id: Ident,
-    pub indices: Vec<Exp>,
+    pub indices: Vec<Expr>,
     pub pos: Position,
 }
 
 #[derive(Debug)]
-pub enum PrimaryExp {
-    Exp(Box<Exp>),
+pub enum PrimaryExpr {
+    Expr(Box<Expr>),
     LVal(LVal),
     Number(Number),
 }
@@ -184,58 +184,58 @@ pub struct Number {
 }
 
 #[derive(Debug)]
-pub enum UnaryExp {
-    Primary(PrimaryExp),
+pub enum UnaryExpr {
+    Primary(PrimaryExpr),
     Call(FuncCall),
-    Unary(UnaryOp, Box<UnaryExp>),
+    Unary(UnaryOp, Box<UnaryExpr>),
 }
 
 #[derive(Debug)]
 pub struct FuncCall {
     pub id: Ident,
-    pub args: Vec<Exp>,
+    pub args: Vec<Expr>,
     pub pos: Position,
 }
 
 #[derive(Debug)]
-pub enum MulExp {
-    Unary(UnaryExp),
-    MulUnary(Box<MulExp>, MulOp, UnaryExp),
+pub enum MulExpr {
+    Unary(UnaryExpr),
+    MulUnary(Box<MulExpr>, MulOp, UnaryExpr),
 }
 
 #[derive(Debug)]
-pub enum AddExp {
-    Mul(MulExp),
-    AddMul(Box<AddExp>, AddOp, MulExp),
+pub enum AddExpr {
+    Mul(MulExpr),
+    AddMul(Box<AddExpr>, AddOp, MulExpr),
 }
 
 #[derive(Debug)]
-pub enum RelExp {
-    Add(AddExp),
-    RelAdd(Box<RelExp>, RelOp, AddExp),
+pub enum RelExpr {
+    Add(AddExpr),
+    RelAdd(Box<RelExpr>, RelOp, AddExpr),
 }
 
 #[derive(Debug)]
-pub enum EqExp {
-    Rel(RelExp),
-    EqRel(Box<EqExp>, EqOp, RelExp),
+pub enum EqExpr {
+    Rel(RelExpr),
+    EqRel(Box<EqExpr>, EqOp, RelExpr),
 }
 
 #[derive(Debug)]
-pub enum LAndExp {
-    Eq(EqExp),
-    LAndEq(Box<LAndExp>, EqExp),
+pub enum LAndExpr {
+    Eq(EqExpr),
+    LAndEq(Box<LAndExpr>, EqExpr),
 }
 
 #[derive(Debug)]
-pub enum LOrExp {
-    LAnd(LAndExp),
-    LOrLAnd(Box<LOrExp>, LAndExp),
+pub enum LOrExpr {
+    LAnd(LAndExpr),
+    LOrLAnd(Box<LOrExpr>, LAndExpr),
 }
 
 #[derive(Debug)]
-pub struct ConstExp {
-    pub exp: Exp,
+pub struct ConstExpr {
+    pub exp: Expr,
     pub pos: Position,
 }
 

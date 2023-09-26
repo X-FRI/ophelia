@@ -1,4 +1,4 @@
-use super::func::FunctionInfo;
+use super::fun::FunctionInfo;
 use std::fs::File;
 use std::io::{Result, Write};
 
@@ -94,15 +94,15 @@ impl<'f> AsmBuilder<'f> {
         writeln!(self.f, "  j {label}")
     }
 
-    pub fn call(&mut self, func: &str) -> Result<()> {
-        writeln!(self.f, "  call {func}")
+    pub fn call(&mut self, fun: &str) -> Result<()> {
+        writeln!(self.f, "  call {fun}")
     }
 
-    pub fn prologue(&mut self, func_name: &str, info: &FunctionInfo) -> Result<()> {
+    pub fn prologue(&mut self, fun_name: &str, info: &FunctionInfo) -> Result<()> {
         // declaration
         writeln!(self.f, "  .text")?;
-        writeln!(self.f, "  .globl {}", &func_name[1..])?;
-        writeln!(self.f, "{}:", &func_name[1..])?;
+        writeln!(self.f, "  .globl {}", &fun_name[1..])?;
+        writeln!(self.f, "{}:", &fun_name[1..])?;
         // prologue
         let offset = info.sp_offset() as i32;
         if offset != 0 {

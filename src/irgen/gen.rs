@@ -1,7 +1,7 @@
 use super::eval::Evaluate;
-use super::func::FunctionInfo;
-use super::scopes::{cur_func, cur_func_mut, Scopes};
-use super::values::{ExpValue, Initializer, Value};
+use super::fun::FunctionInfo;
+use super::scopes::{current_fun, current_fun_mut, Scopes};
+use super::values::{ExprValue, Initializer, Value};
 use super::{DimsToType, Error, Result};
 use crate::ast::*;
 use koopa::ir::builder_traits::*;
@@ -20,9 +20,9 @@ impl<'ast> GenerateProgram<'ast> for CompUnit {
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         let mut new_decl = |name, params_ty, ret_ty| {
             scopes
-                .new_func(
+                .new_fun(
                     name,
-                    program.new_func(FunctionData::new_decl(
+                    program.new_fun(FunctionData::new_decl(
                         format!("@{}", name),
                         params_ty,
                         ret_ty,
@@ -30,7 +30,7 @@ impl<'ast> GenerateProgram<'ast> for CompUnit {
                 )
                 .unwrap();
         };
-        // generate SysY library function declarations
+        // generate SysY library funtion declarations
         new_decl("getint", vec![], Type::get_i32());
         new_decl("getch", vec![], Type::get_i32());
         new_decl(
@@ -108,7 +108,7 @@ impl<'ast> GenerateProgram<'ast> for ConstDef {
                 program.set_value_name(value, Some(format!("@{}", self.id)));
                 value
             } else {
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let alloc = info.new_alloc(program, ty, Some(&self.id));
                 init.into_stores(program, scopes, alloc);
                 alloc
@@ -125,7 +125,7 @@ impl<'ast> GenerateProgram<'ast> for ConstInitVal {
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         Ok(match self {
-            Self::Exp(exp) => Initializer::Const(exp.generate(program, scopes)?),
+            Self::Expr(exp) => Initializer::Const(exp.generate(program, scopes)?),
             Self::List(list) => Initializer::List(
                 list.iter()
                     .map(|v| v.generate(program, scopes))
@@ -167,7 +167,7 @@ impl<'ast> GenerateProgram<'ast> for VarDef {
             program.set_value_name(value, Some(format!("@{}", self.id)));
             value
         } else {
-            let info = cur_func!(scopes);
+            let info = current_fun!(scopes);
             let alloc = info.new_alloc(program, ty, Some(&self.id));
             if let Some(init) = init {
                 init.into_stores(program, scopes, alloc);
@@ -185,7 +185,7 @@ impl<'ast> GenerateProgram<'ast> for InitVal {
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         Ok(match self {
-            Self::Exp(exp) => {
+            Self::Expr(exp) => {
                 if scopes.is_global() {
                     Initializer::Const(exp.eval(scopes).ok_or(Error::FailedToEval)?)
                 } else {
@@ -227,9 +227,9 @@ impl<'ast> GenerateProgram<'ast> for FuncDef {
             data.dfg_mut().set_value_name(alloc, Some("%ret".into()));
             ret_val = Some(alloc);
         }
-        // update function information
-        let func = program.new_func(data);
-        let mut info = FunctionInfo::new(func, entry, end, ret_val);
+        // update funtion information
+        let fun = program.new_fun(data);
+        let mut info = FunctionInfo::new(fun, entry, end, ret_val);
         info.push_bb(program, entry);
         if let Some(ret_val) = info.ret_val() {
             info.push_inst(program, ret_val);
@@ -238,22 +238,22 @@ impl<'ast> GenerateProgram<'ast> for FuncDef {
         // generate allocations for parameters
         scopes.enter();
         for (param, value) in self.params.iter().zip(params) {
-            let ty = program.func(func).dfg().value(value).ty().clone();
+            let ty = program.fun(fun).dfg().value(value).ty().clone();
             let alloc = info.new_alloc(program, ty, Some(&param.id));
             let store = info.new_value(program).store(value, alloc);
             info.push_inst(program, store);
             scopes.new_value(&param.id, Value::Value(alloc))?;
         }
         // update scope
-        scopes.new_func(&self.id, func)?;
-        scopes.cur_func = Some(info);
-        // generate function body
+        scopes.new_fun(&self.id, fun)?;
+        scopes.current_fun = Some(info);
+        // generate funtion body
         self.block.generate(program, scopes)?;
         scopes.exit();
         // handle end basic block
-        let mut info = scopes.cur_func.take().unwrap();
+        let mut info = scopes.current_fun.take().unwrap();
         info.seal_entry(program, cur);
-        info.seal_func(program);
+        info.seal_fun(program);
         Ok(())
     }
 }
@@ -310,7 +310,7 @@ impl<'ast> GenerateProgram<'ast> for Stmt {
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
             Self::Assign(s) => s.generate(program, scopes),
-            Self::ExpStmt(s) => s.generate(program, scopes),
+            Self::ExprStmt(s) => s.generate(program, scopes),
             Self::Block(s) => s.generate(program, scopes),
             Self::If(s) => s.generate(program, scopes),
             Self::While(s) => s.generate(program, scopes),
@@ -332,14 +332,14 @@ impl<'ast> GenerateProgram<'ast> for Assign {
             .into_int(program, scopes)?;
         let lval = self.lval.generate(program, scopes)?.into_ptr()?;
         // generate store
-        let info = cur_func!(scopes);
+        let info = current_fun!(scopes);
         let store = info.new_value(program).store(exp, lval);
         info.push_inst(program, store);
         Ok(())
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for ExpStmt {
+impl<'ast> GenerateProgram<'ast> for ExprStmt {
     type Out = ();
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
@@ -360,7 +360,7 @@ impl<'ast> GenerateProgram<'ast> for If {
             .generate(program, scopes)?
             .into_int(program, scopes)?;
         // generate branch and then/else basic block
-        let info = cur_func_mut!(scopes);
+        let info = current_fun_mut!(scopes);
         let then_bb = info.new_bb(program, Some("%if_then"));
         let else_bb = info.new_bb(program, Some("%if_else"));
         let br = info.new_value(program).branch(cond, then_bb, else_bb);
@@ -369,7 +369,7 @@ impl<'ast> GenerateProgram<'ast> for If {
         // generate then statement
         self.then.generate(program, scopes)?;
         // generate jump and end basic block
-        let info = cur_func_mut!(scopes);
+        let info = current_fun_mut!(scopes);
         let end_bb = info.new_bb(program, Some("%if_end"));
         let jump = info.new_value(program).jump(end_bb);
         info.push_inst(program, jump);
@@ -379,7 +379,7 @@ impl<'ast> GenerateProgram<'ast> for If {
             else_then.generate(program, scopes)?;
         }
         // generate jump
-        let info = cur_func_mut!(scopes);
+        let info = current_fun_mut!(scopes);
         let jump = info.new_value(program).jump(end_bb);
         info.push_inst(program, jump);
         info.push_bb(program, end_bb);
@@ -392,7 +392,7 @@ impl<'ast> GenerateProgram<'ast> for While {
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         // generate loop entry basic block
-        let info = cur_func_mut!(scopes);
+        let info = current_fun_mut!(scopes);
         let entry_bb = info.new_bb(program, Some("%while_entry"));
         let jump = info.new_value(program).jump(entry_bb);
         info.push_inst(program, jump);
@@ -403,7 +403,7 @@ impl<'ast> GenerateProgram<'ast> for While {
             .generate(program, scopes)?
             .into_int(program, scopes)?;
         // generate branch and loop body/end basic block
-        let info = cur_func_mut!(scopes);
+        let info = current_fun_mut!(scopes);
         let body_bb = info.new_bb(program, Some("%while_body"));
         let end_bb = info.new_bb(program, Some("%while_end"));
         let br = info.new_value(program).branch(cond, body_bb, end_bb);
@@ -414,7 +414,7 @@ impl<'ast> GenerateProgram<'ast> for While {
         self.body.generate(program, scopes)?;
         scopes.loop_info.pop();
         // generate jump
-        let info = cur_func_mut!(scopes);
+        let info = current_fun_mut!(scopes);
         let jump = info.new_value(program).jump(entry_bb);
         info.push_inst(program, jump);
         info.push_bb(program, end_bb);
@@ -427,7 +427,7 @@ impl<'ast> GenerateProgram<'ast> for Break {
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         // jump to the end of loop
-        let info = &mut cur_func_mut!(scopes);
+        let info = &mut current_fun_mut!(scopes);
         let (_, end) = scopes.loop_info.last().ok_or(Error::NotInLoop)?;
         let jump = info.new_value(program).jump(*end);
         info.push_inst(program, jump);
@@ -443,7 +443,7 @@ impl<'ast> GenerateProgram<'ast> for Continue {
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         // jump to the entry of loop
-        let info = &mut cur_func_mut!(scopes);
+        let info = &mut current_fun_mut!(scopes);
         let (entry, _) = scopes.loop_info.last().ok_or(Error::NotInLoop)?;
         let jump = info.new_value(program).jump(*entry);
         info.push_inst(program, jump);
@@ -458,11 +458,11 @@ impl<'ast> GenerateProgram<'ast> for Return {
     type Out = ();
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
-        if let Some(ret_val) = cur_func!(scopes).ret_val() {
+        if let Some(ret_val) = current_fun!(scopes).ret_val() {
             // generate store
             if let Some(val) = &self.exp {
                 let value = val.generate(program, scopes)?.into_int(program, scopes)?;
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let store = info.new_value(program).store(value, ret_val);
                 info.push_inst(program, store);
             }
@@ -470,7 +470,7 @@ impl<'ast> GenerateProgram<'ast> for Return {
             return Err(Error::RetValInVoidFunc);
         }
         // jump to the end basic block
-        let info = &mut cur_func_mut!(scopes);
+        let info = &mut current_fun_mut!(scopes);
         let jump = info.new_value(program).jump(info.end());
         info.push_inst(program, jump);
         // push new basic block
@@ -480,8 +480,8 @@ impl<'ast> GenerateProgram<'ast> for Return {
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for Exp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for Expr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         self.lor.generate(program, scopes)
@@ -489,7 +489,7 @@ impl<'ast> GenerateProgram<'ast> for Exp {
 }
 
 impl<'ast> GenerateProgram<'ast> for LVal {
-    type Out = ExpValue;
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         // handle constant
@@ -497,8 +497,8 @@ impl<'ast> GenerateProgram<'ast> for LVal {
             Value::Value(value) => *value,
             Value::Const(num) => {
                 return if self.indices.is_empty() {
-                    let value = cur_func!(scopes).new_value(program).integer(*num);
-                    Ok(ExpValue::Int(value))
+                    let value = current_fun!(scopes).new_value(program).integer(*num);
+                    Ok(ExprValue::Int(value))
                 } else {
                     Err(Error::DerefInt)
                 };
@@ -526,7 +526,7 @@ impl<'ast> GenerateProgram<'ast> for LVal {
         };
         // generate load for array parameter
         if is_ptr_ptr {
-            let info = cur_func!(scopes);
+            let info = current_fun!(scopes);
             value = info.new_value(program).load(value);
             info.push_inst(program, value);
         }
@@ -540,7 +540,7 @@ impl<'ast> GenerateProgram<'ast> for LVal {
             // generate index
             let index = index.generate(program, scopes)?.into_val(program, scopes)?;
             // generate pointer calculation
-            let info = cur_func!(scopes);
+            let info = current_fun!(scopes);
             value = if is_ptr_ptr && i == 0 {
                 info.new_value(program).get_ptr(value, index)
             } else {
@@ -548,37 +548,37 @@ impl<'ast> GenerateProgram<'ast> for LVal {
             };
             info.push_inst(program, value);
         }
-        // generate pointer calculation for function arguments
+        // generate pointer calculation for funtion arguments
         if dims == 0 {
-            Ok(ExpValue::IntPtr(value))
+            Ok(ExprValue::IntPtr(value))
         } else {
             if !is_ptr_ptr || !self.indices.is_empty() {
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let zero = info.new_value(program).integer(0);
                 value = info.new_value(program).get_elem_ptr(value, zero);
                 info.push_inst(program, value);
             }
-            Ok(ExpValue::ArrPtr(value))
+            Ok(ExprValue::ArrPtr(value))
         }
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for PrimaryExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for PrimaryExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
-            Self::Exp(exp) => exp.generate(program, scopes),
+            Self::Expr(exp) => exp.generate(program, scopes),
             Self::LVal(lval) => lval.generate(program, scopes),
-            Self::Number(num) => Ok(ExpValue::Int(
-                cur_func!(scopes).new_value(program).integer(*num),
+            Self::Number(num) => Ok(ExprValue::Int(
+                current_fun!(scopes).new_value(program).integer(*num),
             )),
         }
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for UnaryExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for UnaryExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -586,27 +586,27 @@ impl<'ast> GenerateProgram<'ast> for UnaryExp {
             Self::Call(call) => call.generate(program, scopes),
             Self::Unary(op, exp) => {
                 let exp = exp.generate(program, scopes)?.into_int(program, scopes)?;
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let zero = info.new_value(program).integer(0);
                 let value = match op {
                     UnaryOp::Neg => info.new_value(program).binary(BinaryOp::Sub, zero, exp),
                     UnaryOp::LNot => info.new_value(program).binary(BinaryOp::Eq, exp, zero),
                 };
                 info.push_inst(program, value);
-                Ok(ExpValue::Int(value))
+                Ok(ExprValue::Int(value))
             }
         }
     }
 }
 
 impl<'ast> GenerateProgram<'ast> for FuncCall {
-    type Out = ExpValue;
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
-        // get function from scope
-        let func = scopes.func(&self.id)?;
-        // get function type
-        let (params_ty, is_void) = match program.func(func).ty().kind() {
+        // get funtion from scope
+        let fun = scopes.fun(&self.id)?;
+        // get funtion type
+        let (params_ty, is_void) = match program.fun(fun).ty().kind() {
             TypeKind::Function(params, ret) => (params.clone(), ret.is_unit()),
             _ => unreachable!(),
         };
@@ -625,21 +625,21 @@ impl<'ast> GenerateProgram<'ast> for FuncCall {
                 return Err(Error::ArgMismatch);
             }
         }
-        // generate function call
-        let info = cur_func!(scopes);
-        let call = info.new_value(program).call(func, args);
+        // generate funtion call
+        let info = current_fun!(scopes);
+        let call = info.new_value(program).call(fun, args);
         info.push_inst(program, call);
         // return value if not void
         if is_void {
-            Ok(ExpValue::Void)
+            Ok(ExprValue::Void)
         } else {
-            Ok(ExpValue::Int(call))
+            Ok(ExprValue::Int(call))
         }
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for MulExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for MulExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -648,17 +648,17 @@ impl<'ast> GenerateProgram<'ast> for MulExp {
                 let lhs = lhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let rhs = rhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let op = op.generate(program, scopes)?;
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let value = info.new_value(program).binary(op, lhs, rhs);
                 info.push_inst(program, value);
-                Ok(ExpValue::Int(value))
+                Ok(ExprValue::Int(value))
             }
         }
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for AddExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for AddExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -667,17 +667,17 @@ impl<'ast> GenerateProgram<'ast> for AddExp {
                 let lhs = lhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let rhs = rhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let op = op.generate(program, scopes)?;
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let value = info.new_value(program).binary(op, lhs, rhs);
                 info.push_inst(program, value);
-                Ok(ExpValue::Int(value))
+                Ok(ExprValue::Int(value))
             }
         }
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for RelExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for RelExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -686,17 +686,17 @@ impl<'ast> GenerateProgram<'ast> for RelExp {
                 let lhs = lhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let rhs = rhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let op = op.generate(program, scopes)?;
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let value = info.new_value(program).binary(op, lhs, rhs);
                 info.push_inst(program, value);
-                Ok(ExpValue::Int(value))
+                Ok(ExprValue::Int(value))
             }
         }
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for EqExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for EqExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -705,10 +705,10 @@ impl<'ast> GenerateProgram<'ast> for EqExp {
                 let lhs = lhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let rhs = rhs.generate(program, scopes)?.into_int(program, scopes)?;
                 let op = op.generate(program, scopes)?;
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let value = info.new_value(program).binary(op, lhs, rhs);
                 info.push_inst(program, value);
-                Ok(ExpValue::Int(value))
+                Ok(ExprValue::Int(value))
             }
         }
     }
@@ -721,12 +721,12 @@ macro_rules! generate_logical_ops {
     $prefix:literal, $rhs_bb:ident, $end_bb:ident, $tbb:ident, $fbb:ident
   ) => {{
         // generate result
-        let result = cur_func!($scopes).new_alloc($program, Type::get_i32(), None);
+        let result = current_fun!($scopes).new_alloc($program, Type::get_i32(), None);
         // generate left-hand side expression
         let lhs = $lhs
             .generate($program, $scopes)?
             .into_int($program, $scopes)?;
-        let info = cur_func_mut!($scopes);
+        let info = current_fun_mut!($scopes);
         let zero = info.new_value($program).integer(0);
         let lhs = info.new_value($program).binary(BinaryOp::NotEq, lhs, zero);
         info.push_inst($program, lhs);
@@ -742,7 +742,7 @@ macro_rules! generate_logical_ops {
         let rhs = $rhs
             .generate($program, $scopes)?
             .into_int($program, $scopes)?;
-        let info = cur_func_mut!($scopes);
+        let info = current_fun_mut!($scopes);
         let rhs = info.new_value($program).binary(BinaryOp::NotEq, rhs, zero);
         info.push_inst($program, rhs);
         let store = info.new_value($program).store(rhs, result);
@@ -754,12 +754,12 @@ macro_rules! generate_logical_ops {
         // generate load
         let load = info.new_value($program).load(result);
         info.push_inst($program, load);
-        Ok(ExpValue::Int(load))
+        Ok(ExprValue::Int(load))
     }};
 }
 
-impl<'ast> GenerateProgram<'ast> for LAndExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for LAndExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -771,8 +771,8 @@ impl<'ast> GenerateProgram<'ast> for LAndExp {
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for LOrExp {
-    type Out = ExpValue;
+impl<'ast> GenerateProgram<'ast> for LOrExpr {
+    type Out = ExprValue;
 
     fn generate(&'ast self, program: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
         match self {
@@ -784,7 +784,7 @@ impl<'ast> GenerateProgram<'ast> for LOrExp {
     }
 }
 
-impl<'ast> GenerateProgram<'ast> for ConstExp {
+impl<'ast> GenerateProgram<'ast> for ConstExpr {
     type Out = i32;
 
     fn generate(&'ast self, _: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {

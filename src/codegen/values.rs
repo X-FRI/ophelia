@@ -1,5 +1,5 @@
 use super::builder::AsmBuilder;
-use super::func::Slot;
+use super::fun::Slot;
 use std::fs::File;
 use std::io::Result;
 
@@ -15,7 +15,7 @@ pub enum AsmValue<'i> {
 /// Returns the assembly value of the given value data.
 macro_rules! asm_value {
     ($info:expr, $v:expr) => {
-        AsmValue::from(cur_func!($info).slot_offset($v))
+        AsmValue::from(current_fun!($info).slot_offset($v))
     };
 }
 pub(crate) use asm_value;

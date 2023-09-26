@@ -2,8 +2,8 @@ mod ast;
 // mod codegen;
 // mod irgen;
 mod error;
+mod semantic;
 
-use error::Reporter;
 use lalrpop_util::lalrpop_mod;
 use std::env::args;
 use std::fs::read_to_string;
@@ -25,9 +25,15 @@ fn main() -> io::Result<()> {
     // let _output = args.next().unwrap();
 
     let source_code = read_to_string(&file)?;
-    let reporter = Reporter::new(&file, &source_code);
+    let reporter = error::Reporter::new(&file, &source_code);
 
     let ast = ophelia::CompUnitParser::new().parse(&source_code).unwrap();
+    let semantic_analyzer = semantic::PassManager::new(&ast, reporter.id);
+
+    
+    let semantic_analysis_result = semantic_analyzer.run();
+    
+    reporter.report_all(&semantic_analysis_result);
 
     println!("{:#?}", ast);
 

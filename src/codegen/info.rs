@@ -1,4 +1,4 @@
-use super::func::FunctionInfo;
+use super::fun::FunctionInfo;
 use koopa::ir::{Program, Value};
 use std::collections::HashMap;
 
@@ -6,24 +6,24 @@ use std::collections::HashMap;
 pub struct ProgramInfo<'p> {
     program: &'p Program,
     values: HashMap<Value, String>,
-    cur_func: Option<FunctionInfo>,
+    current_fun: Option<FunctionInfo>,
 }
 
-/// Returns a reference to the current function information.
-macro_rules! cur_func {
+/// Returns a reference to the current funtion information.
+macro_rules! current_fun {
     ($info:expr) => {
-        $info.cur_func().unwrap()
+        $info.current_fun().unwrap()
     };
 }
-pub(crate) use cur_func;
+pub(crate) use current_fun;
 
-/// Returns a mutable reference to the current function information.
-macro_rules! cur_func_mut {
+/// Returns a mutable reference to the current funtion information.
+macro_rules! current_fun_mut {
     ($info:expr) => {
-        $info.cur_func_mut().unwrap()
+        $info.current_fun_mut().unwrap()
     };
 }
-pub(crate) use cur_func_mut;
+pub(crate) use current_fun_mut;
 
 impl<'p> ProgramInfo<'p> {
     /// Creates a new program information.
@@ -31,7 +31,7 @@ impl<'p> ProgramInfo<'p> {
         Self {
             program,
             values: HashMap::new(),
-            cur_func: None,
+            current_fun: None,
         }
     }
 
@@ -50,18 +50,18 @@ impl<'p> ProgramInfo<'p> {
         self.values.insert(value, name);
     }
 
-    /// Returns a reference to the current function information.
-    pub fn cur_func(&self) -> Option<&FunctionInfo> {
-        self.cur_func.as_ref()
+    /// Returns a reference to the current funtion information.
+    pub fn current_fun(&self) -> Option<&FunctionInfo> {
+        self.current_fun.as_ref()
     }
 
-    /// Returns a mutable reference to the current function information.
-    pub fn cur_func_mut(&mut self) -> Option<&mut FunctionInfo> {
-        self.cur_func.as_mut()
+    /// Returns a mutable reference to the current funtion information.
+    pub fn current_fun_mut(&mut self) -> Option<&mut FunctionInfo> {
+        self.current_fun.as_mut()
     }
 
-    /// Sets the current function information.
-    pub fn set_cur_func(&mut self, func: FunctionInfo) {
-        self.cur_func = Some(func);
+    /// Sets the current funtion information.
+    pub fn set_current_fun(&mut self, fun: FunctionInfo) {
+        self.current_fun = Some(fun);
     }
 }

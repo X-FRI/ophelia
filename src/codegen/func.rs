@@ -5,9 +5,9 @@ use std::collections::HashMap;
 
 /// Function information.
 pub struct FunctionInfo {
-    func: Function,
-    /// Maximum argument number of call instructions in the function.
-    /// `None` if the current function is a leaf function.
+    fun: Function,
+    /// Maximum argument number of call instructions in the funtion.
+    /// `None` if the current funtion is a leaf funtion.
     max_arg_num: Option<usize>,
     alloc_size: usize,
     allocs: HashMap<*const ValueData, Slot>,
@@ -20,10 +20,10 @@ impl FunctionInfo {
       static NEXT_TEMP_LABEL_ID: Cell<usize> = Cell::new(0);
     }
 
-    /// Creates a new function information.
-    pub fn new(func: Function) -> Self {
+    /// Creates a new funtion information.
+    pub fn new(fun: Function) -> Self {
         Self {
-            func,
+            fun,
             max_arg_num: None,
             alloc_size: 0,
             allocs: HashMap::new(),
@@ -32,9 +32,9 @@ impl FunctionInfo {
         }
     }
 
-    /// Returns the current function.
-    pub fn func(&self) -> Function {
-        self.func
+    /// Returns the current funtion.
+    pub fn fun(&self) -> Function {
+        self.fun
     }
 
     /// Logs argument number.
@@ -44,7 +44,7 @@ impl FunctionInfo {
         }
     }
 
-    /// Returns `true` if the current function is a leaf function.
+    /// Returns `true` if the current funtion is a leaf funtion.
     pub fn is_leaf(&self) -> bool {
         self.max_arg_num.is_none()
     }
@@ -132,7 +132,7 @@ impl Slot {
         Self { offset, is_ptr }
     }
 
-    /// Maps the offset by applying the given function.
+    /// Maps the offset by applying the given funtion.
     fn map<F>(self, f: F) -> Self
     where
         F: FnOnce(usize) -> usize,

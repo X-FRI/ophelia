@@ -1,55 +1,54 @@
-use super::func::FunctionInfo;
+use super::fun::FunctionInfo;
 use super::values::Value;
 use super::{Error, Result};
 use koopa::ir::Value as IrValue;
 use koopa::ir::{BasicBlock, Function, Program, Type};
 use std::collections::HashMap;
 
-/// Scopes, including all values, constants and functions definitions.
 pub struct Scopes<'ast> {
     vals: Vec<HashMap<&'ast str, Value>>,
-    funcs: HashMap<&'ast str, Function>,
-    pub cur_func: Option<FunctionInfo>,
+    funs: HashMap<&'ast str, Function>,
+    pub current_fun: Option<FunctionInfo>,
     pub loop_info: Vec<(BasicBlock, BasicBlock)>,
 }
 
-/// Returns a reference to the current function information.
-macro_rules! cur_func {
+/// Returns a reference to the current funtion information.
+macro_rules! current_fun {
     ($scopes:expr) => {
-        $scopes.cur_func.as_ref().unwrap()
+        $scopes.current_fun.as_ref().unwrap()
     };
 }
-pub(crate) use cur_func;
+pub(crate) use current_fun;
 
-/// Returns a mutable reference to the current function information.
-macro_rules! cur_func_mut {
+/// Returns a mutable reference to the current funtion information.
+macro_rules! current_fun_mut {
     ($scopes:expr) => {
-        $scopes.cur_func.as_mut().unwrap()
+        $scopes.current_fun.as_mut().unwrap()
     };
 }
-pub(crate) use cur_func_mut;
+pub(crate) use current_fun_mut;
 
 impl<'ast> Scopes<'ast> {
     /// Creates a new `Scopes`.
     pub fn new() -> Self {
         Self {
             vals: vec![HashMap::new()],
-            funcs: HashMap::new(),
-            cur_func: None,
+            funs: HashMap::new(),
+            current_fun: None,
             loop_info: Vec::new(),
         }
     }
 
     /// Returns `true` if is currently in global scope.
     pub fn is_global(&self) -> bool {
-        self.cur_func.is_none()
+        self.current_fun.is_none()
     }
 
     /// Inserts a new value to the current scope.
     pub fn new_value(&mut self, id: &'ast str, value: Value) -> Result<()> {
         let is_global = self.is_global();
         let cur = self.vals.last_mut().unwrap();
-        if cur.contains_key(id) || (is_global && self.funcs.contains_key(id)) {
+        if cur.contains_key(id) || (is_global && self.funs.contains_key(id)) {
             Err(Error::DuplicatedDef)
         } else {
             cur.insert(id, value);
@@ -69,19 +68,19 @@ impl<'ast> Scopes<'ast> {
         Err(Error::SymbolNotFound)
     }
 
-    /// Inserts a new function to the current scope.
-    pub fn new_func(&mut self, id: &'ast str, func: Function) -> Result<()> {
-        if self.funcs.contains_key(id) || self.vals.first().unwrap().contains_key(id) {
+    /// Inserts a new funtion to the current scope.
+    pub fn new_fun(&mut self, id: &'ast str, fun: Function) -> Result<()> {
+        if self.funs.contains_key(id) || self.vals.first().unwrap().contains_key(id) {
             Err(Error::DuplicatedDef)
         } else {
-            self.funcs.insert(id, func);
+            self.funs.insert(id, fun);
             Ok(())
         }
     }
 
-    /// Returns the function by the given identifier.
-    pub fn func(&self, id: &str) -> Result<Function> {
-        self.funcs.get(id).copied().ok_or(Error::SymbolNotFound)
+    /// Returns the funtion by the given identifier.
+    pub fn fun(&self, id: &str) -> Result<Function> {
+        self.funs.get(id).copied().ok_or(Error::SymbolNotFound)
     }
 
     /// Enters a new scope.
@@ -100,7 +99,7 @@ impl<'ast> Scopes<'ast> {
             program.borrow_value(value).ty().clone()
         } else {
             program
-                .func(cur_func!(self).func())
+                .fun(current_fun!(self).fun())
                 .dfg()
                 .value(value)
                 .ty()

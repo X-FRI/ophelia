@@ -1,4 +1,4 @@
-use super::scopes::{cur_func, Scopes};
+use super::scopes::{current_fun, Scopes};
 use super::{Error, Result};
 use koopa::ir::builder_traits::*;
 use koopa::ir::Value as IrValue;
@@ -110,7 +110,7 @@ impl Initializer {
             Self::Const(num) => Ok(if scopes.is_global() {
                 program.new_value().integer(num)
             } else {
-                cur_func!(scopes).new_value(program).integer(num)
+                current_fun!(scopes).new_value(program).integer(num)
             }),
             Self::Value(_) => Err(Error::FailedToEval),
             Self::List(list) => {
@@ -121,7 +121,7 @@ impl Initializer {
                 Ok(if scopes.is_global() {
                     program.new_value().aggregate(values)
                 } else {
-                    cur_func!(scopes).new_value(program).aggregate(values)
+                    current_fun!(scopes).new_value(program).aggregate(values)
                 })
             }
         }
@@ -130,7 +130,7 @@ impl Initializer {
     /// Converts the initializer (must be reshaped first)
     /// into store instructions.
     pub fn into_stores(self, program: &mut Program, scopes: &Scopes, ptr: IrValue) {
-        let info = cur_func!(scopes);
+        let info = current_fun!(scopes);
         let store = match self {
             Self::Const(num) => {
                 let value = info.new_value(program).integer(num);
@@ -152,7 +152,7 @@ impl Initializer {
 }
 
 /// An expression value.
-pub enum ExpValue {
+pub enum ExprValue {
     /// An `void`.
     Void,
     /// An integer.
@@ -163,14 +163,14 @@ pub enum ExpValue {
     ArrPtr(IrValue),
 }
 
-impl ExpValue {
+impl ExprValue {
     /// Converts the value into a right value.
     pub fn into_val(self, program: &mut Program, scopes: &Scopes) -> Result<IrValue> {
         match self {
             Self::Void => Err(Error::UseVoidValue),
             Self::Int(val) => Ok(val),
             Self::IntPtr(ptr) => {
-                let info = cur_func!(scopes);
+                let info = current_fun!(scopes);
                 let load = info.new_value(program).load(ptr);
                 info.push_inst(program, load);
                 Ok(load)

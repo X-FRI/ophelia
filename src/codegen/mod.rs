@@ -1,5 +1,5 @@
 mod builder;
-mod func;
+mod fun;
 mod gen;
 mod info;
 mod values;

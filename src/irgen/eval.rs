@@ -7,7 +7,7 @@ pub trait Evaluate {
     fn eval(&self, scopes: &Scopes) -> Option<i32>;
 }
 
-impl Evaluate for Exp {
+impl Evaluate for Expr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         self.lor.eval(scopes)
     }
@@ -27,17 +27,17 @@ impl Evaluate for LVal {
     }
 }
 
-impl Evaluate for PrimaryExp {
+impl Evaluate for PrimaryExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
-            Self::Exp(exp) => exp.eval(scopes),
+            Self::Expr(exp) => exp.eval(scopes),
             Self::LVal(lval) => lval.eval(scopes),
             Self::Number(num) => Some(*num),
         }
     }
 }
 
-impl Evaluate for UnaryExp {
+impl Evaluate for UnaryExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::Primary(primary) => primary.eval(scopes),
@@ -50,7 +50,7 @@ impl Evaluate for UnaryExp {
     }
 }
 
-impl Evaluate for MulExp {
+impl Evaluate for MulExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::Unary(exp) => exp.eval(scopes),
@@ -66,7 +66,7 @@ impl Evaluate for MulExp {
     }
 }
 
-impl Evaluate for AddExp {
+impl Evaluate for AddExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::Mul(exp) => exp.eval(scopes),
@@ -81,7 +81,7 @@ impl Evaluate for AddExp {
     }
 }
 
-impl Evaluate for RelExp {
+impl Evaluate for RelExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::Add(exp) => exp.eval(scopes),
@@ -98,7 +98,7 @@ impl Evaluate for RelExp {
     }
 }
 
-impl Evaluate for EqExp {
+impl Evaluate for EqExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::Rel(exp) => exp.eval(scopes),
@@ -113,7 +113,7 @@ impl Evaluate for EqExp {
     }
 }
 
-impl Evaluate for LAndExp {
+impl Evaluate for LAndExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::Eq(exp) => exp.eval(scopes),
@@ -125,7 +125,7 @@ impl Evaluate for LAndExp {
     }
 }
 
-impl Evaluate for LOrExp {
+impl Evaluate for LOrExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         match self {
             Self::LAnd(exp) => exp.eval(scopes),
@@ -137,7 +137,7 @@ impl Evaluate for LOrExp {
     }
 }
 
-impl Evaluate for ConstExp {
+impl Evaluate for ConstExpr {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
         self.exp.eval(scopes)
     }
