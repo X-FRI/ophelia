@@ -7,17 +7,14 @@ use error::Reporter;
 use lalrpop_util::lalrpop_mod;
 use std::env::args;
 use std::fs::read_to_string;
-use std::io::Result;
-use std::process::exit;
+use std::io;
 
 lalrpop_mod! {
   #[allow(clippy::all)]
   ophelia
 }
 
-fn main() {}
-
-fn try_main() {
+fn main() -> io::Result<()> {
     let mut args = args();
 
     args.next();
@@ -34,6 +31,7 @@ fn try_main() {
 
     println!("{:#?}", ast);
 
+    Ok(())
     // generate IR
     // let program = irgen::generate_program(&comp_unit).map_err(Error::Generate)?;
     // if matches!(mode, Mode::Koopa) {

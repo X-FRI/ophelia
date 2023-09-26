@@ -110,13 +110,17 @@ InitVal: InitVal = {
 
 FuncDef: FuncDef = {
   <start:@L>
-    <head: FuncDefHead>
+    "let"
+    <id: Ident>
+    "("
     ")"
+    "=>"
+    <ty: Type>
     <block: Block>
   <end:@R> => {
     FuncDef {
-      ty: head.0,
-      id: head.1,
+      ty,
+      id,
       params: Vec::new(),
       block,
       pos: Position(start, end)
@@ -124,25 +128,25 @@ FuncDef: FuncDef = {
   },
 
   <start:@L>
-    <head: FuncDefHead>
+    "let"
+    <id: Ident>
+    "("
     <param: FuncFParam>
     <mut params: ("," <FuncFParam>)*>
     ")"
+    "=>"
+    <ty: Type>
     <block: Block>
   <end:@R> => {
     params.insert(0, param);
     FuncDef {
-      ty: head.0,
-      id: head.1,
+      ty,
+      id,
       params,
       block,
       pos: Position(start, end)
     }
   }
-}
-
-FuncDefHead: (Type, Ident) = {
-  <typ: Type> <id: Ident> "(" => (typ, id),
 }
 
 Type: Type = {
