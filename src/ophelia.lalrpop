@@ -8,123 +8,561 @@ match {
   _
 }
 
-pub Program: Program = <items: (GlobalItem)*> => Program { <> };
+pub CompUnit: CompUnit = {
+  <start:@L>
+    <items: (GlobalItem)*>
+  <end:@R> => {
+    CompUnit {
+      items,
+      pos: Position(start, end)
+    }
+  }
+}
 
 GlobalItem: GlobalItem = {
-  DefineFun => GlobalItem::DefineFun(<>),
+  Decl => GlobalItem::Decl(<>),
+  FuncDef => GlobalItem::FuncDef(<>),
 }
 
-DefineFun: DefineFun = {
+Decl: Decl = {
+  ConstDecl => Decl::Const(<>),
+  VarDecl => Decl::Var(<>),
+}
+
+ConstDecl: ConstDecl = {
+  "val"
   <start:@L>
-    "let" <ident: Ident> "(" ")" "=>" <typ: FunType> <body: Block>
-  <end:@R> =>
-    DefineFun { 
-      pos : Position {start, end},
-      ident, typ, body
+    <def: ConstDef>
+    <mut defs: ("," <ConstDef>)*>
+    ";"
+  <end:@R> => {
+    defs.insert(0, def);
+    ConstDecl {
+      defs,
+      pos: Position(start, end)
     }
+  }
 }
 
-FunType: FunType = {
+ConstDef: ConstDef = {
   <start:@L>
-    <typ: FunTypeRule>
-  <end:@R> =>
-    FunType {
-      pos : Position {start, end},
-      typ
+    <id: Ident>
+    <dims: ("[" <ConstExp> "]")*>
+    "="
+    <init: ConstInitVal>
+  <end:@R> => {
+    ConstDef { 
+      id,
+      dims,
+      init,
+      pos: Position(start, end)
     }
+  }
 }
-FunTypeRule: Type = "Int" => Type::Int;
 
-Ident: Ident = {
+ConstInitVal: ConstInitVal = {
+  ConstExp => ConstInitVal::Exp(<>),
+  "{" "}" => ConstInitVal::List(Vec::new()),
+  "{" <init: ConstInitVal> <mut inits: ("," <ConstInitVal>)*> "}" => {
+    inits.insert(0, init);
+    ConstInitVal::List(inits)
+  }
+}
+
+VarDecl: VarDecl = {
   <start:@L>
-    <name: IdentRule>
-  <end:@R> => 
-    Ident {
-      pos: Position {start, end},
-      name
+    "let"
+    <def: VarDef>
+    <mut defs: ("," <VarDef>)*>
+    ";"
+  <end:@R> => {
+    defs.insert(0, def);
+    VarDecl {
+      defs,
+      pos: Position(start, end)
     }
-}
-IdentRule: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
-
-Number: Number = {
-  <start:@L>
-    <value: DecimalNumberRule>
-  <end:@R> =>
-    Number {
-      value,
-      pos: Position { start, end }
-    },
-  
-  <start:@L>
-    <value: OctalNumberRule>
-  <end:@R> =>
-    Number {
-      value,
-      pos: Position { start, end }
-    },
-  
-  <start:@L>
-    <value: HexNumberRule>
-  <end:@R> =>
-    Number {
-      value,
-      pos: Position { start, end }
-    },
+  }
 }
 
-DecimalNumberRule: i32 = r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap();
-OctalNumberRule: i32 = r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap();
-HexNumberRule: i32 = r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap();
+VarDef: VarDef = {
+  <start:@L>
+    <id: Ident>
+    <dims: ("[" <ConstExp> "]")*>
+    <init: ("=" <InitVal>)?> 
+  <end:@R> => {
+    VarDef {
+      id,
+      dims,
+      init,
+      pos: Position(start, end) 
+    }
+  }
+}
+
+InitVal: InitVal = {
+  Exp => InitVal::Exp(<>),
+  "{" "}" => InitVal::List(Vec::new()),
+  "{" <init: InitVal> <mut inits: ("," <InitVal>)*> "}" => {
+    inits.insert(0, init);
+    InitVal::List(inits)
+  }
+}
+
+FuncDef: FuncDef = {
+  <start:@L>
+    <head: FuncDefHead>
+    ")"
+    <block: Block>
+  <end:@R> => {
+    FuncDef {
+      ty: head.0,
+      id: head.1,
+      params: Vec::new(),
+      block,
+      pos: Position(start, end)
+    }
+  },
+
+  <start:@L>
+    <head: FuncDefHead>
+    <param: FuncFParam>
+    <mut params: ("," <FuncFParam>)*>
+    ")"
+    <block: Block>
+  <end:@R> => {
+    params.insert(0, param);
+    FuncDef {
+      ty: head.0,
+      id: head.1,
+      params,
+      block,
+      pos: Position(start, end)
+    }
+  }
+}
+
+FuncDefHead: (Type, Ident) = {
+  <typ: Type> <id: Ident> "(" => (typ, id),
+}
+
+Type: Type = {
+  <start:@L> "Int" <end:@R> => Type::Int(Position(start, end)),
+  <start:@L> "Unit" <end:@R> => Type::Unit(Position(start, end))
+}
+
+FuncFParam: FuncFParam = {
+  <start:@L>
+    <typ: Type>
+    <id: Ident>
+    <dims: ("[" "]" <("[" <ConstExp> "]")*>)?>
+  <end:@R> => {
+    FuncFParam {
+      typ,
+      id,
+      dims,
+      pos :Position(start, end)
+    }
+  }
+}
 
 Block: Block = {
   <start:@L>
-    "{" <items: (BlockItem)*> "}"
-  <end:@R> =>
+    "{"
+    <items: (BlockItem)*>
+    "}"
+  <end:@R> =>  {
     Block {
-      pos : Position {start, end},
-      items
-    },
+      items,
+      pos :Position(start, end)
+    }
+  }
 }
 
 BlockItem: BlockItem = {
+  Decl => BlockItem::Decl(<>),
   Stmt => BlockItem::Stmt(<>),
 }
 
 Stmt: Stmt = {
-  Return => <>
+  MatchedStmt => <>,
+  OpenStmt => <>,
 }
 
-Return: Stmt = {
+MatchedStmt: Stmt = {
   <start:@L>
-    "return" <expr: Expr> ";"
-  <end:@R> =>
-    Stmt::Return(Return {
-      pos : Position {start, end},
-      expr
+    <lval: LVal>
+    "="
+    <exp: Exp>
+    ";"
+  <end:@R> => {
+    Stmt::Assign(Assign {
+      lval,
+      exp,
+      pos :Position(start, end)
     })
+  },
+
+  <start:@L>
+    <exp: (Exp)?>
+    ";"
+  <end:@R> => {
+    Stmt::ExpStmt(ExpStmt {
+      exp,
+      pos :Position(start, end)
+    })
+  },
+
+  Block => Stmt::Block(<>),
+  
+  <start:@L>
+    "if"
+    "("
+    <cond: Exp>
+    ")"
+    <then: MatchedStmt>
+    "else"
+    <else_then: MatchedStmt>
+  <end:@R> => {
+    Stmt::If(Box::new(If {
+      cond,
+      then,
+      else_then: Some(else_then),
+      pos :Position(start, end)
+    }))
+  },
+
+  <start:@L>
+    "while"
+    "("
+    <cond: Exp>
+    ")"
+    <body: MatchedStmt>
+  <end:@R> => {
+    Stmt::While(Box::new(While {
+      cond,
+      body,
+      pos :Position(start, end)
+    }))
+  },
+
+  <start:@L>
+    "break"
+    ";"
+  <end:@R> => {
+    Stmt::Break(Break{
+      pos: Position(start, end)
+    })
+  },
+
+  <start:@L>
+    "continue"
+    ";"
+  <end:@R> => {
+    Stmt::Continue(Continue{
+      pos: Position(start, end)
+    })
+  },
+
+  <start:@L>
+    "return"
+    <exp: (Exp)?>
+    ";"
+  <end:@R> => {
+    Stmt::Return(Return {
+      exp,
+      pos: Position(start, end) })
+  }
 }
 
-Expr: Expr = {
-  UnaryExpr => Expr::UnaryExpr(Box::new( <> ))
+OpenStmt: Stmt = {
+  <start:@L>
+    "if"
+    "("
+    <cond: Exp>
+    ")"
+    <then: Stmt>
+  <end:@R> => {
+    Stmt::If(Box::new(If {
+      cond,
+      then,
+      else_then: None,
+      pos: Position(start, end)
+    }))
+  },
+
+  <start:@L>
+    "if"
+    "("
+    <cond: Exp>
+    ")"
+    <then: MatchedStmt>
+    "else"
+    <else_then: OpenStmt>
+  <end:@R> => {
+    Stmt::If(Box::new(If {
+      cond,
+      then,
+      else_then: Some(else_then),
+      pos :Position(start, end)
+    }))
+  },
+
+  <start:@L>
+    "while"
+    "("
+    <cond: Exp>
+    ")"
+    <body: OpenStmt>
+  <end:@R> => {
+    Stmt::While(Box::new(While {
+      cond,
+      body,
+      pos: Position(start, end)
+    }))
+  },
 }
 
-UnaryExpr: UnaryExpr = {
-  PrimaryExpr => UnaryExpr::Primary( <> ),
-  <op: UnaryOp> <expr: UnaryExpr> => UnaryExpr::Unary(op, Box::new(expr))
+Exp: Exp = {
+  <start:@L>
+    <lor: LOrExp>
+  <end:@R> => {
+    Exp {
+      lor,
+      pos: Position(start, end)
+    }
+  }
 }
 
-PrimaryExpr: PrimaryExpr = {
-  "("
-    <start:@L>
-      <expr: Expr>
-    <end:@R>
-  ")" =>
-    PrimaryExpr::Expr(Box::new(expr)),
-  Number => PrimaryExpr::Number( <> ),
+LVal: LVal = {
+  <start:@L>
+    <id: Ident>
+    <indices: ("[" <Exp> "]")*>
+  <end:@R> => {
+    LVal {
+      id,
+      indices,
+      pos: Position(start, end)
+    }
+  }
+}
+
+PrimaryExp: PrimaryExp = {
+  "(" <Exp> ")" => PrimaryExp::Exp(Box::new(<>)),
+  LVal => PrimaryExp::LVal(<>),
+  Number => PrimaryExp::Number(<>),
+}
+
+UnaryExp: UnaryExp = {
+  PrimaryExp => UnaryExp::Primary(<>),
+  
+  <start:@L>
+    <id: Ident>
+    "("
+    ")"
+  <end:@R> => {
+    UnaryExp::Call(FuncCall {
+      id,
+      args: Vec::new(),
+      pos: Position(start, end)
+    })
+  },
+
+  <start:@L>
+    <id: Ident>
+    "("
+    <arg: Exp>
+    <mut args: ("," <Exp>)*>
+    ")"
+  <end:@R> => {
+    args.insert(0, arg);
+    UnaryExp::Call(FuncCall {
+      id,
+      args,
+      pos: Position(start, end)
+    })
+  },
+
+  "+" <UnaryExp> => <>,
+  <op: UnaryOp> <exp: UnaryExp> => UnaryExp::Unary(op, Box::new(exp)),
+}
+
+MulExp: MulExp = {
+  UnaryExp => MulExp::Unary(<>),
+  <lhs: MulExp> <op: MulOp> <rhs: UnaryExp> => {
+    MulExp::MulUnary(Box::new(lhs), op, rhs)
+  }
+}
+
+AddExp: AddExp = {
+  MulExp => AddExp::Mul(<>),
+  <lhs: AddExp> <op: AddOp> <rhs: MulExp> => {
+    AddExp::AddMul(Box::new(lhs), op, rhs)
+  }
+}
+
+RelExp: RelExp = {
+  AddExp => RelExp::Add(<>),
+  <lhs: RelExp> <op: RelOp> <rhs: AddExp> => {
+    RelExp::RelAdd(Box::new(lhs), op, rhs)
+  }
+}
+
+EqExp: EqExp = {
+  RelExp => EqExp::Rel(<>),
+  <lhs: EqExp> <op: EqOp> <rhs: RelExp> => {
+    EqExp::EqRel(Box::new(lhs), op, rhs)
+  }
+}
+
+LAndExp: LAndExp = {
+  EqExp => LAndExp::Eq(<>),
+  <lhs: LAndExp> "&&" <rhs: EqExp> => {
+    LAndExp::LAndEq(Box::new(lhs), rhs)
+  }
+}
+
+LOrExp: LOrExp = {
+  LAndExp => LOrExp::LAnd(<>),
+  <lhs: LOrExp> "||" <rhs: LAndExp> => {
+    LOrExp::LOrLAnd(Box::new(lhs), rhs)
+  }
+}
+
+ConstExp: ConstExp = {
+  <start:@L>
+    <exp: Exp>
+  <end:@R> => {
+    ConstExp {
+      exp,
+      pos: Position(start, end)
+    }
+  }
+}
+
+Ident: Ident = {
+  <start:@L>
+    <id: r"[_a-zA-Z][_a-zA-Z0-9]*">
+  <end:@R> => {
+    Ident {
+      id: id.to_string(),
+      pos: Position(start, end)
+    }
+  }
+}
+
+Number: Number = {
+  <start:@L> 
+    <literal: r"[1-9][0-9]*">
+  <end:@R> => {
+    Number {
+      value: i32::from_str_radix(literal, 10).unwrap(),
+      pos: Position(start, end)
+    }
+  },
+
+  <start:@L> 
+    <literal: r"0[0-7]*">
+  <end:@R> => {
+    Number {
+      value: i32::from_str_radix(literal, 8).unwrap(),
+      pos: Position(start, end)
+    }
+  },
+
+  <start:@L> 
+    <literal: r"0[xX][0-9a-fA-F]+">
+  <end:@R> => {
+    Number {
+      value: i32::from_str_radix(&literal[2..], 16).unwrap(),
+      pos: Position(start, end)
+    }
+  }
 }
 
 UnaryOp: UnaryOp = {
-  <start:@L> "-" <end:@R> => UnaryOp::Sub(Position { <> }),
-  <start:@L> "+" <end:@R> => UnaryOp::Add(Position { <> }),
-  <start:@L> "!" <end:@R> => UnaryOp::Not(Position { <> }),
+  <start:@L>
+    "-"
+  <end:@R> => {
+    UnaryOp::Neg(Position(start, end))
+  },
+
+  <start:@L>
+    "!"
+  <end:@R> => {
+    UnaryOp::LNot(Position(start, end))
+  }
+}
+
+MulOp: MulOp = {
+  <start:@L>
+    "*"
+  <end:@R> => {
+    MulOp::Mul(Position(start, end))
+  },
+
+  <start:@L>
+    "/"
+  <end:@R> => {
+    MulOp::Div(Position(start, end))
+  },
+
+  <start:@L>
+    "%"
+  <end:@R> => {
+    MulOp::Mod(Position(start, end))
+  }
+}
+
+AddOp: AddOp = {
+  <start:@L>
+    "+"
+  <end:@R> => {
+    AddOp::Add(Position(start, end))
+  },
+
+  <start:@L>
+    "-"
+  <end:@R> => {
+    AddOp::Sub(Position(start, end))
+  }
+}
+
+RelOp: RelOp = {
+  <start:@L>
+    "<"
+  <end:@R> => {
+    RelOp::Lt(Position(start, end))
+  },
+
+  <start:@L>
+    ">"
+  <end:@R> => {
+    RelOp::Gt(Position(start, end))
+  },
+
+  <start:@L>
+    "<="
+  <end:@R> => {
+     RelOp::Le(Position(start, end))
+  },
+
+  <start:@L>
+    ">="
+  <end:@R> => {
+     RelOp::Ge(Position(start, end))
+  }
+}
+
+EqOp: EqOp = {
+  <start:@L>
+    "=="
+  <end:@R> => {
+     EqOp::Eq(Position(start, end))
+  },
+
+  <start:@L>
+    "!="
+  <end:@R> => {
+     EqOp::Ne(Position(start, end))
+  }
 }

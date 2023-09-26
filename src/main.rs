@@ -1,21 +1,23 @@
 mod ast;
+// mod codegen;
+// mod irgen;
 mod error;
-mod semantic_analysis;
-mod ir;
-mod asm;
 
 use error::Reporter;
 use lalrpop_util::lalrpop_mod;
 use std::env::args;
 use std::fs::read_to_string;
 use std::io::Result;
+use std::process::exit;
 
 lalrpop_mod! {
-    #[allow(clippy::all)]
-    ophelia
+  #[allow(clippy::all)]
+  ophelia
 }
 
-fn main() -> Result<()> {
+fn main() {}
+
+fn try_main() {
     let mut args = args();
 
     args.next();
@@ -28,16 +30,18 @@ fn main() -> Result<()> {
     let source_code = read_to_string(&file)?;
     let reporter = Reporter::new(&file, &source_code);
 
-    let ast = ophelia::ProgramParser::new().parse(&source_code).unwrap();
+    let ast = ophelia::CompUnitParser::new().parse(&source_code).unwrap();
 
-    semantic_analysis::scan(&ast, &reporter);
+    println!("{:#?}", ast);
 
-    let ir = ir::gen(&ast);
-
-    println!("{}", ir);
-    // asm::gen(&ir);
-
-    println!("done");
-
-    Ok(())
+    // generate IR
+    // let program = irgen::generate_program(&comp_unit).map_err(Error::Generate)?;
+    // if matches!(mode, Mode::Koopa) {
+    //     return KoopaGenerator::from_path(output)
+    //         .map_err(Error::File)?
+    //         .generate_on(&program)
+    //         .map_err(Error::Io);
+    // }
+    // generate RISC-V assembly
+    // codegen::generate_asm(&program, &output).map_err(Error::Io)
 }
