@@ -1,16 +1,16 @@
 use crate::ast;
 use crate::error::Error;
-use crate::semantic::Pass;
+use crate::semantic::Checker;
 use codespan_reporting::diagnostic::Label;
 
 /// E0001: The entry module should start with the main function.
 pub struct E0001<'ast> {
-    pub ast: &'ast ast::CompUnit,
-    pub reporter_id: usize,
+    ast: &'ast ast::CompUnit,
+    reporter_id: usize,
 }
 
-impl<'ast> Pass<'ast> for E0001<'ast> {
-    fn run(&'ast self) -> Result<(), Error> {
+impl<'ast> Checker<'ast> for E0001<'ast> {
+    fn run(&self) -> Result<(), Error> {
         for fun in &self.ast.items {
             match &fun {
                 ast::GlobalItem::FuncDef(fun_def) => {
@@ -34,5 +34,11 @@ impl<'ast> Pass<'ast> for E0001<'ast> {
         }
 
         Ok(())
+    }
+}
+
+impl E0001<'_> {
+    pub fn new(ast: &ast::CompUnit, reporter_id: usize) -> Box<E0001> {
+        Box::new(E0001 { ast, reporter_id })
     }
 }

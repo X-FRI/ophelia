@@ -2,7 +2,7 @@ mod ast;
 // mod codegen;
 // mod irgen;
 mod error;
-mod semantic;
+mod syntax;
 
 use lalrpop_util::lalrpop_mod;
 use std::env::args;
@@ -28,14 +28,11 @@ fn main() -> io::Result<()> {
     let reporter = error::Reporter::new(&file, &source_code);
 
     let ast = ophelia::CompUnitParser::new().parse(&source_code).unwrap();
-    let semantic_analyzer = semantic::PassManager::new(&ast, reporter.id);
+    let syntax_checker = syntax::CheckerManager::new(&ast, reporter.id);
 
-    
-    let semantic_analysis_result = semantic_analyzer.run();
-    
-    reporter.report_all(&semantic_analysis_result);
+    reporter.report_all(&syntax_checker.run());
 
-    println!("{:#?}", ast);
+    // println!("{:#?}", ast);
 
     Ok(())
     // generate IR
