@@ -1,13 +1,11 @@
 use crate::ast;
 use crate::error::{Error, Reporter};
 use crate::ir::scopes::Scopes;
-use crate::ir::values::Initializer;
 use codespan_reporting::diagnostic::Label;
-use koopa::ir::Program;
 
 use super::REPORTER;
 
-/// E0002: Break statement is not in a loop
+/// E0003: Break statement is not in a loop
 pub struct E0003<'ast> {
     pub ast: &'ast ast::Break,
 }
