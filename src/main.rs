@@ -1,6 +1,6 @@
 mod ast;
 // mod codegen;
-// mod irgen;
+mod irgen;
 mod error;
 mod syntax;
 
@@ -34,9 +34,8 @@ fn main() -> io::Result<()> {
 
     // println!("{:#?}", ast);
 
-    Ok(())
     // generate IR
-    // let program = irgen::generate_program(&comp_unit).map_err(Error::Generate)?;
+    let program = irgen::gen(&ast).unwrap();
     // if matches!(mode, Mode::Koopa) {
     //     return KoopaGenerator::from_path(output)
     //         .map_err(Error::File)?
@@ -45,4 +44,6 @@ fn main() -> io::Result<()> {
     // }
     // generate RISC-V assembly
     // codegen::generate_asm(&program, &output).map_err(Error::Io)
+
+    Ok(())
 }

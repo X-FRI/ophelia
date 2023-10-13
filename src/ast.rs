@@ -9,7 +9,7 @@ pub struct CompUnit {
 
 #[derive(Debug)]
 pub struct Ident {
-    pub id: String,
+    pub name: String,
     pub pos: Position,
 }
 

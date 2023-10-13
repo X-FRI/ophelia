@@ -99,7 +99,7 @@ impl<'ast> Scopes<'ast> {
             program.borrow_value(value).ty().clone()
         } else {
             program
-                .fun(current_fun!(self).fun())
+                .func(current_fun!(self).fun())
                 .dfg()
                 .value(value)
                 .ty()

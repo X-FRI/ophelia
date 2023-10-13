@@ -47,6 +47,8 @@ ConstDecl: ConstDecl = {
 ConstDef: ConstDef = {
   <start:@L>
     <id: Ident>
+    ":"
+    <ty: Type>
     <dims: ("[" <ConstExpr> "]")*>
     "="
     <init: ConstInitVal>
@@ -448,7 +450,7 @@ Ident: Ident = {
     <id: r"[_a-zA-Z][_a-zA-Z0-9]*">
   <end:@R> => {
     Ident {
-      id: id.to_string(),
+      name: id.to_string(),
       pos: Position(start, end)
     }
   }
