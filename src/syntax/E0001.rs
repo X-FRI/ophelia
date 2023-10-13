@@ -1,12 +1,13 @@
 use crate::ast;
-use crate::error::Error;
+use crate::error::{Error, Reporter};
 use crate::syntax::Checker;
 use codespan_reporting::diagnostic::Label;
+
+use super::REPORTER;
 
 /// E0001: The entry module should start with the main function.
 pub struct E0001<'ast> {
     ast: &'ast ast::CompUnit,
-    reporter_id: usize,
 }
 
 impl<'ast> Checker<'ast> for E0001<'ast> {
@@ -19,7 +20,7 @@ impl<'ast> Checker<'ast> for E0001<'ast> {
                             message: String::from("Incorrect main function"),
                             code: String::from("E0001"),
                             labels: vec![Label::primary(
-                                self.reporter_id,
+                                unsafe { Reporter::reporter_id(REPORTER) },
                                 fun_def.id.pos.0..fun_def.id.pos.1,
                             )
                             .with_message(format!("expected `main`, found {}", fun_def.id.name))],
@@ -38,7 +39,7 @@ impl<'ast> Checker<'ast> for E0001<'ast> {
 }
 
 impl E0001<'_> {
-    pub fn new(ast: &ast::CompUnit, reporter_id: usize) -> Box<E0001> {
-        Box::new(E0001 { ast, reporter_id })
+    pub fn new(ast: &ast::CompUnit) -> Box<E0001> {
+        Box::new(E0001 { ast })
     }
 }

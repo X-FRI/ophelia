@@ -1,7 +1,7 @@
 mod ast;
 // mod codegen;
-mod irgen;
 mod error;
+mod ir;
 mod syntax;
 
 use lalrpop_util::lalrpop_mod;
@@ -25,17 +25,18 @@ fn main() -> io::Result<()> {
     // let _output = args.next().unwrap();
 
     let source_code = read_to_string(&file)?;
-    let reporter = error::Reporter::new(&file, &source_code);
+    unsafe { syntax::REPORTER = Some(error::Reporter::new(&file, &source_code)) }
 
     let ast = ophelia::CompUnitParser::new().parse(&source_code).unwrap();
-    let syntax_checker = syntax::CheckerManager::new(&ast, reporter.id);
+    let syntax_checker = syntax::CheckerManager::new(&ast);
 
-    reporter.report_all(&syntax_checker.run());
+    unsafe { syntax::REPORTER.unwrap().report_all(&syntax_checker.run()) }
 
     // println!("{:#?}", ast);
 
     // generate IR
-    let program = irgen::gen(&ast).unwrap();
+    unsafe { ir::error::REPORTER = Some(error::Reporter::new(&file, &source_code)) }
+    let program = ir::gen(&ast).unwrap();
     // if matches!(mode, Mode::Koopa) {
     //     return KoopaGenerator::from_path(output)
     //         .map_err(Error::File)?

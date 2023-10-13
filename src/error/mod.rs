@@ -10,3 +10,9 @@ pub struct Error {
     pub labels: Vec<Label<usize>>,
     pub note: Vec<String>,
 }
+
+impl Reporter {
+    pub fn reporter_id(reporter: Option<Reporter>) -> u32 {
+        unsafe { reporter.unwrap().id }
+    }
+}
