@@ -1,5 +1,6 @@
-.vscode/
-_build/
+/.vscode
+/.idea
+/_build
 
 # Added by cargo
 
