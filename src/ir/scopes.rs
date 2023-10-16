@@ -1,6 +1,5 @@
 use super::fun::FunctionInfo;
 use super::values::Value;
-use super::{Error, Result};
 use koopa::ir::Value as IrValue;
 use koopa::ir::{BasicBlock, Function, Program, Type};
 use std::collections::HashMap;

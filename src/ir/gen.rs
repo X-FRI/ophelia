@@ -5,6 +5,7 @@ use super::error::E0006;
 use super::error::E0007;
 use super::error::E0008;
 use super::error::E0009;
+use super::error::E0010;
 use super::error::Result;
 use super::error::E0002;
 use super::eval::Evaluate;
@@ -777,7 +778,7 @@ impl<'ast> GenerateProgram<'ast> for ConstExpr {
     type Out = i32;
 
     fn gen(&'ast self, _: &mut Program, scopes: &mut Scopes<'ast>) -> Result<Self::Out> {
-        self.eval(scopes).ok_or(Error::FailedToEval)
+        (E0010::E0010 { ast: self }).run(scopes)?
     }
 }
 

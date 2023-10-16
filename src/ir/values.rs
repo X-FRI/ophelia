@@ -1,5 +1,4 @@
 use super::scopes::{current_fun, Scopes};
-use super::{Error, Result};
 use koopa::ir::builder_traits::*;
 use koopa::ir::Value as IrValue;
 use koopa::ir::{Program, Type, TypeKind};

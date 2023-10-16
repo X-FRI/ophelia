@@ -6,6 +6,7 @@ pub mod E0006;
 pub mod E0007;
 pub mod E0008;
 pub mod E0009;
+pub mod E0010;
 
 use crate::error::{self, Reporter};
 
