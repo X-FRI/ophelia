@@ -1,6 +1,8 @@
 use super::error::E0003;
 use super::error::E0004;
 use super::error::E0005;
+use super::error::E0006;
+use super::error::E0007;
 use super::error::Result;
 use super::error::E0002;
 use super::eval::Evaluate;
@@ -494,12 +496,8 @@ impl<'ast> GenerateProgram<'ast> for LVal {
         let mut value = match scopes.value(&self.id.name)? {
             Value::Value(value) => *value,
             Value::Const(num) => {
-                return if self.indices.is_empty() {
-                    let value = current_fun!(scopes).new_value(program).integer(*num);
-                    Ok(ExprValue::Int(value))
-                } else {
-                    Err(Error::DerefInt)
-                };
+                // self.indices.is_empty()
+                (E0006::E0006 { ast: self }).run(program, scopes, num)?;
             }
         };
         // check type
@@ -531,9 +529,8 @@ impl<'ast> GenerateProgram<'ast> for LVal {
         // handle array dereference
         for (i, index) in self.indices.iter().enumerate() {
             // check if dereferencing integer
-            if dims == 0 {
-                return Err(Error::DerefInt);
-            }
+            // if dims == 0
+            (E0007::E0007 { ast: self }).run(dims)?;
             dims -= 1;
             // generate index
             let index = index.gen(program, scopes)?.into_val(program, scopes)?;
