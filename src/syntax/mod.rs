@@ -1,5 +1,7 @@
 use crate::ast;
-use crate::error::Error;
+use crate::error::{Error, Reporter};
+
+pub static mut REPORTER: Option<Reporter> = None;
 
 #[allow(non_snake_case)]
 mod E0001;
@@ -13,9 +15,11 @@ pub struct CheckerManager<'ast> {
 }
 
 impl<'ast> CheckerManager<'ast> {
-    pub fn new(ast: &'ast ast::CompUnit, reporter_id: usize) -> Self {
-        CheckerManager {
-            passes: vec![E0001::E0001::new(&ast, reporter_id)],
+    pub fn new(ast: &'ast ast::CompUnit) -> Self {
+        unsafe {
+            CheckerManager {
+                passes: vec![E0001::E0001::new(&ast)],
+            }
         }
     }
 

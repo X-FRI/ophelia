@@ -1,4 +1,4 @@
 # The entry module should start with the main funtion
-let test_ophelia() => Int {
+let main() => Unit {
     return 0;
 }

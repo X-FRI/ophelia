@@ -9,7 +9,7 @@ pub struct CompUnit {
 
 #[derive(Debug)]
 pub struct Ident {
-    pub id: String,
+    pub name: String,
     pub pos: Position,
 }
 
@@ -270,4 +270,31 @@ pub enum RelOp {
 pub enum EqOp {
     Eq(Position),
     Ne(Position),
+}
+
+impl Type {
+    pub fn to_string(&self) -> String {
+        match self {
+            Type::Int(_) => "Int",
+            Type::Unit(_) => "Unit",
+        }
+        .to_string()
+    }
+
+    pub fn pos(&self) -> &Position {
+        match self {
+            Type::Int(pos) => pos,
+            Type::Unit(pos) => pos,
+        }
+    }
+
+    pub fn to_string(types: &Vec<Type>) -> String {
+        let mut types_str = "(";
+
+        for ty in types {
+            types_str += format!("=> {}", ty.to_string()).to_owned()
+        }
+
+        types_str.to_string()
+    }
 }

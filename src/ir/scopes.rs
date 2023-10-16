@@ -1,6 +1,5 @@
 use super::fun::FunctionInfo;
 use super::values::Value;
-use super::{Error, Result};
 use koopa::ir::Value as IrValue;
 use koopa::ir::{BasicBlock, Function, Program, Type};
 use std::collections::HashMap;
@@ -99,7 +98,7 @@ impl<'ast> Scopes<'ast> {
             program.borrow_value(value).ty().clone()
         } else {
             program
-                .fun(current_fun!(self).fun())
+                .func(current_fun!(self).fun())
                 .dfg()
                 .value(value)
                 .ty()

@@ -15,10 +15,10 @@ impl Evaluate for Expr {
 
 impl Evaluate for LVal {
     fn eval(&self, scopes: &Scopes) -> Option<i32> {
-        let val = scopes.value(&self.id).ok()?;
+        let val = scopes.value(&self.id.name).ok()?;
         if self.indices.is_empty() {
             match val {
-                Value::Const(i) => Some(*i),
+                Value::Const(i) => Some(i),
                 _ => None,
             }
         } else {
@@ -32,7 +32,7 @@ impl Evaluate for PrimaryExpr {
         match self {
             Self::Expr(exp) => exp.eval(scopes),
             Self::LVal(lval) => lval.eval(scopes),
-            Self::Number(num) => Some(*num),
+            Self::Number(num) => Some(num.value),
         }
     }
 }
@@ -43,8 +43,8 @@ impl Evaluate for UnaryExpr {
             Self::Primary(primary) => primary.eval(scopes),
             Self::Call(_) => None,
             Self::Unary(op, exp) => exp.eval(scopes).map(|exp| match op {
-                UnaryOp::Neg => -exp,
-                UnaryOp::LNot => (exp == 0) as i32,
+                UnaryOp::Neg(_) => -exp,
+                UnaryOp::LNot(_) => (exp == 0) as i32,
             }),
         }
     }
@@ -56,9 +56,9 @@ impl Evaluate for MulExpr {
             Self::Unary(exp) => exp.eval(scopes),
             Self::MulUnary(lhs, op, rhs) => match (lhs.eval(scopes), rhs.eval(scopes)) {
                 (Some(lhs), Some(rhs)) => match op {
-                    MulOp::Mul => Some(lhs * rhs),
-                    MulOp::Div => (rhs != 0).then_some(lhs / rhs),
-                    MulOp::Mod => (rhs != 0).then_some(lhs % rhs),
+                    MulOp::Mul(_) => Some(lhs * rhs),
+                    MulOp::Div(_) => (rhs != 0).then_some(lhs / rhs),
+                    MulOp::Mod(_) => (rhs != 0).then_some(lhs % rhs),
                 },
                 _ => None,
             },
@@ -72,8 +72,8 @@ impl Evaluate for AddExpr {
             Self::Mul(exp) => exp.eval(scopes),
             Self::AddMul(lhs, op, rhs) => match (lhs.eval(scopes), rhs.eval(scopes)) {
                 (Some(lhs), Some(rhs)) => Some(match op {
-                    AddOp::Add => lhs + rhs,
-                    AddOp::Sub => lhs - rhs,
+                    AddOp::Add(_) => lhs + rhs,
+                    AddOp::Sub(_) => lhs - rhs,
                 }),
                 _ => None,
             },
@@ -87,10 +87,10 @@ impl Evaluate for RelExpr {
             Self::Add(exp) => exp.eval(scopes),
             Self::RelAdd(lhs, op, rhs) => match (lhs.eval(scopes), rhs.eval(scopes)) {
                 (Some(lhs), Some(rhs)) => Some(match op {
-                    RelOp::Lt => (lhs < rhs) as i32,
-                    RelOp::Gt => (lhs > rhs) as i32,
-                    RelOp::Le => (lhs <= rhs) as i32,
-                    RelOp::Ge => (lhs >= rhs) as i32,
+                    RelOp::Lt(_) => (lhs < rhs) as i32,
+                    RelOp::Gt(_) => (lhs > rhs) as i32,
+                    RelOp::Le(_) => (lhs <= rhs) as i32,
+                    RelOp::Ge(_) => (lhs >= rhs) as i32,
                 }),
                 _ => None,
             },
@@ -104,8 +104,8 @@ impl Evaluate for EqExpr {
             Self::Rel(exp) => exp.eval(scopes),
             Self::EqRel(lhs, op, rhs) => match (lhs.eval(scopes), rhs.eval(scopes)) {
                 (Some(lhs), Some(rhs)) => Some(match op {
-                    EqOp::Eq => (lhs == rhs) as i32,
-                    EqOp::Neq => (lhs != rhs) as i32,
+                    EqOp::Eq(_) => (lhs == rhs) as i32,
+                    EqOp::Ne(_) => (lhs != rhs) as i32,
                 }),
                 _ => None,
             },

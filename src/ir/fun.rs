@@ -23,7 +23,7 @@ impl FunctionInfo {
         }
     }
 
-    /// Returns the curren funtion.
+    /// Returns the current funtion.
     pub fn fun(&self) -> Function {
         self.fun
     }
@@ -39,9 +39,9 @@ impl FunctionInfo {
     }
 
     /// Creates a new basic block in funtion.
-    pub fn new_bb(&self, program: &mut Program, name: Option<&str>) -> BasicBlock {
+    pub fn new_basic_block(&self, program: &mut Program, name: Option<&str>) -> BasicBlock {
         program
-            .fun_mut(self.fun)
+            .func_mut(self.fun)
             .dfg_mut()
             .new_bb()
             .basic_block(name.map(|s| s.into()))
@@ -49,14 +49,14 @@ impl FunctionInfo {
 
     /// Creates a new value in funtion.
     pub fn new_value<'p>(&self, program: &'p mut Program) -> LocalBuilder<'p> {
-        program.fun_mut(self.fun).dfg_mut().new_value()
+        program.func_mut(self.fun).dfg_mut().new_value()
     }
 
     /// Pushes the basic block to the funtion,
     /// updates the current basic block.
     pub fn push_bb(&mut self, program: &mut Program, bb: BasicBlock) {
         program
-            .fun_mut(self.fun)
+            .func_mut(self.fun)
             .layout_mut()
             .bbs_mut()
             .push_key_back(bb)
@@ -67,7 +67,7 @@ impl FunctionInfo {
     /// Pushes the instruction to the back of the given basic block.
     pub fn push_inst_to(&self, program: &mut Program, bb: BasicBlock, inst: Value) {
         program
-            .fun_mut(self.fun)
+            .func_mut(self.fun)
             .layout_mut()
             .bb_mut(bb)
             .insts_mut()
@@ -85,7 +85,7 @@ impl FunctionInfo {
         let alloc = self.new_value(program).alloc(ty);
         if let Some(name) = name {
             program
-                .fun_mut(self.fun)
+                .func_mut(self.fun)
                 .dfg_mut()
                 .set_value_name(alloc, Some(format!("@{}", name)));
         }

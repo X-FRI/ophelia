@@ -1,12 +1,13 @@
 use crate::ast;
-use crate::error::Error;
-use crate::semantic::Checker;
+use crate::error::{Error, Reporter};
+use crate::syntax::Checker;
 use codespan_reporting::diagnostic::Label;
+
+use super::REPORTER;
 
 /// E0001: The entry module should start with the main function.
 pub struct E0001<'ast> {
     ast: &'ast ast::CompUnit,
-    reporter_id: usize,
 }
 
 impl<'ast> Checker<'ast> for E0001<'ast> {
@@ -14,15 +15,15 @@ impl<'ast> Checker<'ast> for E0001<'ast> {
         for fun in &self.ast.items {
             match &fun {
                 ast::GlobalItem::FuncDef(fun_def) => {
-                    if fun_def.id.id != "main" {
+                    if fun_def.id.name != "main" {
                         return Err(Error {
                             message: String::from("Incorrect main function"),
                             code: String::from("E0001"),
                             labels: vec![Label::primary(
-                                self.reporter_id,
+                                unsafe { Reporter::reporter_id(REPORTER) },
                                 fun_def.id.pos.0..fun_def.id.pos.1,
                             )
-                            .with_message(format!("expected `main`, found {}", fun_def.id.id))],
+                            .with_message(format!("expected `main`, found {}", fun_def.id.name))],
                             note: vec![String::from(
                                 "The entry module should start with the main function",
                             )],
@@ -38,7 +39,7 @@ impl<'ast> Checker<'ast> for E0001<'ast> {
 }
 
 impl E0001<'_> {
-    pub fn new(ast: &ast::CompUnit, reporter_id: usize) -> Box<E0001> {
-        Box::new(E0001 { ast, reporter_id })
+    pub fn new(ast: &ast::CompUnit) -> Box<E0001> {
+        Box::new(E0001 { ast })
     }
 }
