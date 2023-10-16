@@ -3,6 +3,8 @@ use super::error::E0004;
 use super::error::E0005;
 use super::error::E0006;
 use super::error::E0007;
+use super::error::E0008;
+use super::error::E0009;
 use super::error::Result;
 use super::error::E0002;
 use super::eval::Evaluate;
@@ -612,14 +614,10 @@ impl<'ast> GenerateProgram<'ast> for FuncCall {
             .map(|a| a.gen(program, scopes)?.into_val(program, scopes))
             .collect::<Result<Vec<_>>>()?;
         // check argument types
-        if params_ty.len() != args.len() {
-            return Err(Error::ArgMismatch);
-        }
-        for (param_ty, arg) in params_ty.iter().zip(&args) {
-            if param_ty != &scopes.ty(program, *arg) {
-                return Err(Error::ArgMismatch);
-            }
-        }
+        // if params_ty.len() != args.len() {
+        (E0008::E0008 { ast: self }).run(params_ty, &args)?;
+        (E0009::E0009 { ast: self }).run(params_ty, &args, program, scopes)?;
+
         // generate funtion call
         let info = current_fun!(scopes);
         let call = info.new_value(program).call(fun, args);
